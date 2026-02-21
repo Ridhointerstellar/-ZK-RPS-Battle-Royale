@@ -1,0 +1,98 @@
+Quickstart Guide
+The following quickstart guide will get you up and ready to build as quickly as possible. If you have any questions please jump into the Stellar Dev Discord or the Telegram group.
+
+Fork the game studio
+If you have git command line installed you can just run
+
+git clone https://github.com/jamesbachini/Stellar-Game-Studio.git
+Alternatively there is Github desktop available for anyone that prefers a GUI
+
+Install Game Studio
+Get up and running with the Game Studio in minutes
+
+Before you begin, ensure you have the following installed:
+
+Bun - For running scripts and the frontend
+Rust & Cargo - For building Soroban smart contracts
+Stellar CLI - For contract deployment
+wasm32v1-none target - Rust compilation target
+curl -fsSL https://bun.sh/install | bashcurl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | shcargo install --locked stellar-cli --features optrustup target add wasm32v1-none```
+Windows Note
+
+The commands in these docs assume a Unix-like shell (macOS/Linux). On Windows, use Windows Subsystem For Linux (WSL) to run bun, cargo, and stellar reliably.
+
+One-Command Setup
+
+Run the automated setup script to build, deploy, and start the development server:
+
+bun run setup
+What happens during setup?
+
+The setup script will:
+
+Build all Soroban contracts to WASM
+Create admin, player1 and player2 testnet accounts
+Deploy contracts to Stellar testnet
+Generate TypeScript bindings
+Configure environment variables
+Install frontend dependencies
+Create Your Game
+Adding a new game means creating a Stellar smart contract, integrating zero-knowledge in some way, and building a frontend.
+
+Let’s start by creating a new game called my-game
+
+bun run create my-game
+This will create a template contract and frontend in your local repository. Next we can setup a local dev environment by firing up a frontend server
+
+bun run dev:game my-game
+This will start a local server for your standalone game at https://localhost:3000
+
+Code examples for the frontend and service patterns are available in the game-studio documentation, and there are several demo games in the games library you can copy or adapt.
+
+Your game contracts must call start_game() and end_game() functions on the testnet mock contract: CB4VZAT2U3UC6XFK3N23SKRF2NDCMP3QHJYMCHHFMZO7MRQO6DQ2EMYG
+
+Zero Knowledge Integration
+You need to include some form of zero-knowledge technology in the game. There are two main options for this currently on Stellar:
+
+RISC Zero
+
+RISC Zero provides an execution environment where we can compute large amounts of data off-chain and then verify the output in a Stellar smart contract.
+
+RISC Zero Docs: https://dev.risczero.com/
+
+RISC Zero Verifier: https://github.com/NethermindEth/stellar-risc0-verifier/
+
+Noir Lang
+
+A Rust-like domain specific programming language for creating zero-knowledge circuits.
+
+*Noir support is currently limited on Stellar due to processing constraints in a decentralized computing environment. This is a situation that we expect to see evolving throughout the course of the hackathon.
+
+Noir Docs: https://noir-lang.org/docs/
+
+Noir Verifier: https://github.com/yugocabrio/rs-soroban-ultrahonk
+
+We can then build and redeploy contracts at any time with:
+
+bun run build my-gamebun run deploy my-game
+Finally when you are ready to move out of the developer frontend container you can run this command:
+
+bun run publish my-game --build
+This will export the game frontend to a production-ready container using external browser wallets such as Freighter, etc.
+
+Publish your code
+You’ll need either a personal or team GitHub account for this, which is free to setup: https://github.com/signup
+
+Once you’ve got an account ready you can publish the code using either git command line or desktop tools.
+
+There is more information on publish a repository here: https://docs.github.com/en/packages/learn-github-packages/publishing-a-package
+
+Video Walkthrough
+A short video walkthrough helps judges review your game quickly.
+
+What to include (3–8 minutes):
+
+Quick intro: game name and concept
+Gameplay demo
+How you used blockchain / zero-knowledge features
+How the on-chain pieces connect to the game

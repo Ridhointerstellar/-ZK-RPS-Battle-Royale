@@ -1,0 +1,49 @@
+Resources
+VIEW THE QUICKSTART GUIDE TAB FOR DETAILED SETUP INSTRUCTIONS
+
+Stellar Dev Tools
+Stellar Docs: https://developers.stellar.org/
+Core documentation for building on Stellar (concepts, APIs, smart contracts, and guides).
+
+SDKs: https://developers.stellar.org/docs/tools/sdks
+
+Libraries + docs to interact with the network and build apps in your preferred language.
+
+Stellar CLI: https://developers.stellar.org/docs/tools/cli
+
+Build, deploy, and interact with Stellar smart contracts from the command line.
+
+Lab: https://developers.stellar.org/docs/tools/lab
+
+Explore, test, and experiment with Stellar developer tools and APIs in the browser.
+
+Quickstart: https://developers.stellar.org/docs/tools/quickstart
+
+Run a local Stellar network environment via Docker for development/testing.
+
+Stellar Wallets Kit: https://stellarwalletskit.dev/
+
+Plug-and-play wallet connections for Stellar apps with a simple unified API.
+
+Noir Circuits (ZK)
+3 Example Noir Zero-Knowledge Circuits (video): https://youtu.be/K0anQ9gQD1E
+
+Walkthrough of building/running Noir circuits + examples you can adapt for games.
+
+Noir experiments repo (code): https://github.com/jamesbachini/Noirlang-Experiments
+
+Ready-to-clone circuits and experiments to jumpstart your ZK workflow.
+
+*Noir support is currently limited on Stellar due to processing constraints in a decentralized computing environment. This is a situation that we expect to see evolving throughout the course of the hackathon.
+
+ZK Game Examples (Code)
+Sudoku ZK example (Ultrahonk workflow): https://github.com/tupui/ultrahonk_soroban_contract
+
+Full example: client-side proof generation + onchain verification + reward logic.
+
+Maze ZK verifier example (contract): https://github.com/kalepail/ultrahonk_soroban_contract
+
+Onchain verifier pattern you can reuse for proving valid moves/solutions.
+
+AI Development Assistance
+Stellar Dev Skills: https://github.com/stellar/stellar-dev-skill AI skill for modern Stellar development. Includes a Stellar ZK skill that may be useful for building your project.
