@@ -15,7 +15,9 @@ A ZK-powered Rock-Paper-Scissors Battle Royale game built for the Stellar ZK Gam
 - Commit-reveal protocol: players commit hash(choice + nonce), then reveal choice + nonce
 - Best of 3 rounds per match
 - Game Hub integration (start_game/end_game)
-- Contract ID on testnet (Game Hub): `CB4VZAT2U3UC6XFK3N23SKRF2NDCMP3QHJYMCHHFMZO7MRQO6DQ2EMYG`
+- Game Hub Contract ID (testnet): `CB4VZAT2U3UC6XFK3N23SKRF2NDCMP3QHJYMCHHFMZO7MRQO6DQ2EMYG`
+- RPS Battle Contract ID (testnet): `CDKC7PIUYAPEDFXIZ27R7EYUA5GJGTSCVO27OBHFSDUA7NFAY4IY3EZ3`
+- Deployer Address: `GAOA3ZMFEKTJ2KLD6ARW6Y6UOBGRGPHHSLBTWCYSEEY6NIC2X3AZ4D5F`
 
 ### Frontend (React + Vite + TypeScript)
 - Location: `Stellar-Game-Studio/zk-rps-battle-frontend/`
@@ -42,6 +44,9 @@ A ZK-powered Rock-Paper-Scissors Battle Royale game built for the Stellar ZK Gam
 - Contract tests: `cd Stellar-Game-Studio && cargo test -p zk-rps-battle`
 
 ## Recent Changes
+- 2026-02-21: Contract deployed to Stellar Testnet (CDKC7PIUYAPEDFXIZ27R7EYUA5GJGTSCVO27OBHFSDUA7NFAY4IY3EZ3)
+- 2026-02-21: Fixed Hash<32> to BytesN<32> conversion in contract and tests
+- 2026-02-21: All 7 contract tests passing
 - 2026-02-21: Complete contract rewrite from number-guess to commit-reveal RPS
 - 2026-02-21: Frontend game component with VS AI and Battle Royale tournament
 - 2026-02-21: ZK commitment system using SHA-256 hashing
