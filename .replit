@@ -33,3 +33,8 @@ externalPort = 80
 [nix]
 channel = "stable-25_05"
 packages = ["dbus"]
+
+[userenv]
+
+[userenv.shared]
+VITE_ZK_RPS_BATTLE_CONTRACT_ID = "CDKC7PIUYAPEDFXIZ27R7EYUA5GJGTSCVO27OBHFSDUA7NFAY4IY3EZ3"

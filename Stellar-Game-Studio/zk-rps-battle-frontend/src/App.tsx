@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { Layout } from './components/Layout';
 import { ZkRpsBattleGame } from './games/zk-rps-battle/ZkRpsBattleGame';
 
