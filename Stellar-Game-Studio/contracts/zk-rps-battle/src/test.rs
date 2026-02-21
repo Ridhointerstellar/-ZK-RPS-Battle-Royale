@@ -1,6 +1,6 @@
 #![cfg(test)]
 
-use crate::{Error, ZkRpsBattleContract, ZkRpsBattleContractClient, GamePhase};
+use crate::{ZkRpsBattleContract, ZkRpsBattleContractClient, GamePhase};
 use soroban_sdk::testutils::{Address as _, Ledger as _};
 use soroban_sdk::{contract, contractimpl, Address, Bytes, BytesN, Env};
 
@@ -62,7 +62,7 @@ fn make_commitment(env: &Env, choice: u32, nonce: &[u8; 32]) -> BytesN<32> {
     let mut hash_input = Bytes::new(env);
     hash_input.append(&Bytes::from_array(env, &choice.to_be_bytes()));
     hash_input.append(&Bytes::from_slice(env, nonce));
-    env.crypto().keccak256(&hash_input)
+    env.crypto().keccak256(&hash_input).to_bytes()
 }
 
 #[test]
