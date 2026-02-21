@@ -1,4 +1,4 @@
-modules = ["bun-1.2"]
+modules = ["bun-1.2", "rust-stable"]
 [agent]
 expertMode = true
 
@@ -29,3 +29,6 @@ outputType = "webview"
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[nix]
+channel = "stable-25_05"

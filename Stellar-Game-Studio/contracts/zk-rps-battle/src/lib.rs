@@ -379,7 +379,7 @@ impl ZkRpsBattleContract {
             if game.player1_revealed {
                 return Err(Error::AlreadyRevealed);
             }
-            if computed_hash != game.player1_commitment {
+            if computed_hash.to_bytes() != game.player1_commitment {
                 return Err(Error::CommitmentMismatch);
             }
             game.player1_choice = the_choice;
@@ -388,7 +388,7 @@ impl ZkRpsBattleContract {
             if game.player2_revealed {
                 return Err(Error::AlreadyRevealed);
             }
-            if computed_hash != game.player2_commitment {
+            if computed_hash.to_bytes() != game.player2_commitment {
                 return Err(Error::CommitmentMismatch);
             }
             game.player2_choice = the_choice;
