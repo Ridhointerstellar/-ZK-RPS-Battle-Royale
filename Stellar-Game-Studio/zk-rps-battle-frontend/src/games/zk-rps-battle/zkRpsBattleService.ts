@@ -232,7 +232,7 @@ export class OnChainRpsService {
     const { sequence } = await this.server.getLatestLedger();
     const validUntil = sequence + 1000;
 
-    onStatus?.("Signing authorization entries...");
+    onStatus?.("Signing AI authorization entries...");
     const signedAuth: xdr.SorobanAuthorizationEntry[] = [];
     for (const entry of authEntries) {
       const creds = entry.credentials();
@@ -253,22 +253,8 @@ export class OnChainRpsService {
               NETWORK_PASSPHRASE,
             ),
           );
-        } else if (entryAddr === userAddress) {
-          onStatus?.("Please approve in your wallet...");
-          creds.address().signatureExpirationLedger(validUntil);
-          const entryXdr = entry.toXDR("base64");
-          const result = await walletSigner.signAuthEntry(entryXdr, {
-            networkPassphrase: NETWORK_PASSPHRASE,
-            address: userAddress,
-          });
-          if (result.error) throw new Error(result.error.message);
-          signedAuth.push(
-            xdr.SorobanAuthorizationEntry.fromXDR(
-              result.signedAuthEntry,
-              "base64",
-            ),
-          );
         } else {
+          creds.address().signatureExpirationLedger(validUntil);
           signedAuth.push(entry);
         }
       } else {
@@ -303,8 +289,21 @@ export class OnChainRpsService {
 
     finalTx.sign(aiKeypair);
 
+    onStatus?.("Please approve in your wallet...");
+    const txXdr = finalTx.toXDR();
+    const signResult = await walletSigner.signTransaction(txXdr, {
+      networkPassphrase: NETWORK_PASSPHRASE,
+      address: userAddress,
+    });
+    if (signResult.error) throw new Error(signResult.error.message);
+
+    const userSignedTx = TransactionBuilder.fromXDR(
+      signResult.signedTxXdr,
+      NETWORK_PASSPHRASE,
+    );
+
     onStatus?.("Submitting to Stellar Testnet...");
-    const sendRes = await this.server.sendTransaction(finalTx);
+    const sendRes = await this.server.sendTransaction(userSignedTx);
     if (sendRes.status === "ERROR") {
       throw new Error(
         `Send failed: ${JSON.stringify(sendRes.errorResult)}`,
