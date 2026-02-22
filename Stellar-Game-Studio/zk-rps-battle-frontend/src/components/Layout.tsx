@@ -1,4 +1,4 @@
-import { WalletSwitcher } from './WalletSwitcher';
+import { WalletStandalone } from './WalletStandalone';
 import './Layout.css';
 
 interface LayoutProps {
@@ -27,15 +27,14 @@ export function Layout({ title, subtitle, children }: LayoutProps) {
         </div>
         <div className="header-actions">
           <div className="network-pill">Testnet</div>
-          <div className="network-pill dev-pill">Dev Wallets</div>
-          <WalletSwitcher />
+          <WalletStandalone />
         </div>
       </header>
 
       <main className="studio-main">{children}</main>
 
       <footer className="studio-footer">
-        <span>Built with the Stellar Game Studio</span>
+        <span>Built for Stellar ZK Gaming Hackathon</span>
       </footer>
     </div>
   );

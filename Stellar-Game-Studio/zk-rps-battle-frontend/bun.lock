@@ -1,6 +1,5 @@
 {
   "lockfileVersion": 1,
-  "configVersion": 1,
   "workspaces": {
     "": {
       "name": "stellar-game-studio-frontend",
@@ -10,6 +9,7 @@
         "@stellar/stellar-sdk": "^14.4.2",
         "buffer": "^6.0.3",
         "clsx": "^2.1.1",
+        "js-sha3": "^0.9.3",
         "lucide-react": "^0.556.0",
         "react": "^19.2.1",
         "react-dom": "^19.2.1",
@@ -1030,6 +1030,8 @@
     "jiti": ["jiti@2.6.1", "", { "bin": { "jiti": "lib/jiti-cli.mjs" } }, "sha512-ekilCSN1jwRvIbgeg/57YFh8qQDNbwDb9xT/qu2DAHbFFZUicIl4ygVaAvzveMhMVr3LnpSKTNnwt8PoOfmKhQ=="],
 
     "js-sha256": ["js-sha256@0.11.1", "", {}, "sha512-o6WSo/LUvY2uC4j7mO50a2ms7E/EAdbP0swigLV+nzHKTTaYnaLIWJ02VdXrsJX0vGedDESQnLsOekr94ryfjg=="],
+
+    "js-sha3": ["js-sha3@0.9.3", "", {}, "sha512-BcJPCQeLg6WjEx3FE591wVAevlli8lxsxm9/FzV4HXkV49TmBH38Yvrpce6fjbADGMKFrBMGTqrVz3qPIZ88Gg=="],
 
     "js-tokens": ["js-tokens@4.0.0", "", {}, "sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ=="],
 
