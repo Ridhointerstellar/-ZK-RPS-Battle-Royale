@@ -35,6 +35,21 @@ export default function App() {
           <p style={{ color: 'var(--color-ink-muted)', fontSize: '0.9rem', marginBottom: '2rem', lineHeight: 1.6 }}>
             Connect your Stellar wallet to play Rock-Paper-Scissors with zero-knowledge proofs on the Stellar Testnet. Every move is committed and revealed on-chain.
           </p>
+          <div style={{
+            marginBottom: '1.5rem',
+            padding: '0.75rem 1rem',
+            background: 'rgba(245, 158, 11, 0.1)',
+            borderRadius: '0.75rem',
+            border: '1px solid rgba(245, 158, 11, 0.3)',
+            fontSize: '0.8rem',
+            color: '#d97706',
+            lineHeight: 1.6,
+            textAlign: 'center',
+          }}>
+            <strong>Important:</strong> Before connecting, make sure your Freighter wallet is switched to <strong>Testnet</strong>.
+            <br />
+            In Freighter: Settings &gt; Network &gt; Select "TESTNET"
+          </div>
           <button
             onClick={() => connect().catch(() => undefined)}
             style={{
@@ -51,7 +66,7 @@ export default function App() {
             onMouseOver={(e) => (e.currentTarget.style.transform = 'translateY(-2px)')}
             onMouseOut={(e) => (e.currentTarget.style.transform = 'translateY(0)')}
           >
-            Connect Wallet
+            Connect Wallet (Testnet)
           </button>
           <div style={{
             marginTop: '2rem',
@@ -64,8 +79,8 @@ export default function App() {
             textAlign: 'left',
           }}>
             <strong style={{ color: 'var(--color-ink)' }}>How it works:</strong><br />
-            1. Connect your Freighter or other Stellar wallet<br />
-            2. Choose Rock, Paper, or Scissors<br />
+            1. Switch Freighter wallet to Testnet network<br />
+            2. Connect your wallet and choose Rock, Paper, or Scissors<br />
             3. Your choice is cryptographically committed on-chain (hash of choice + nonce)<br />
             4. After both players commit, choices are revealed and verified by the smart contract<br />
             5. The contract ensures no one can cheat or front-run
