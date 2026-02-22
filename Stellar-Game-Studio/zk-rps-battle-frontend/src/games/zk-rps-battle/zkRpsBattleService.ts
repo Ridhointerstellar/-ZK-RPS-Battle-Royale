@@ -150,6 +150,21 @@ export class OnChainRpsService {
     this.contract = new Contract(CONTRACT_ID);
   }
 
+  private async getAccountWithRetry(address: string, maxRetries = 5) {
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        return await this.server.getAccount(address);
+      } catch (e: any) {
+        if (i < maxRetries - 1 && (e?.message?.includes("not found") || e?.code === 404)) {
+          await new Promise((r) => setTimeout(r, 2000));
+        } else {
+          throw new Error(`Account not found: ${address}. Make sure your wallet is on Stellar Testnet and your account is funded.`);
+        }
+      }
+    }
+    throw new Error(`Account not found: ${address}`);
+  }
+
   async ensureAccountFunded(address: string): Promise<void> {
     try {
       await this.server.getAccount(address);
@@ -201,7 +216,7 @@ export class OnChainRpsService {
     sourceAddress: string,
   ): Promise<Game | null> {
     try {
-      const account = await this.server.getAccount(sourceAddress);
+      const account = await this.getAccountWithRetry(sourceAddress);
       const tx = new TransactionBuilder(account, {
         fee: BASE_FEE,
         networkPassphrase: NETWORK_PASSPHRASE,
@@ -243,7 +258,7 @@ export class OnChainRpsService {
       nativeToScVal(1000n, { type: "i128" }),
     ];
 
-    const aiAccount = await this.server.getAccount(aiKeypair.publicKey());
+    const aiAccount = await this.getAccountWithRetry(aiKeypair.publicKey());
     const simTx = new TransactionBuilder(aiAccount, {
       fee: BASE_FEE,
       networkPassphrase: NETWORK_PASSPHRASE,
@@ -306,7 +321,7 @@ export class OnChainRpsService {
       }
     }
 
-    const aiAccount2 = await this.server.getAccount(aiKeypair.publicKey());
+    const aiAccount2 = await this.getAccountWithRetry(aiKeypair.publicKey());
     const finalTx = new TransactionBuilder(aiAccount2, {
       fee: (parseInt(minFee || BASE_FEE) + 100000).toString(),
       networkPassphrase: NETWORK_PASSPHRASE,
@@ -364,7 +379,7 @@ export class OnChainRpsService {
       xdr.ScVal.scvBytes(Buffer.from(commitment)),
     ];
 
-    const account = await this.server.getAccount(userAddress);
+    const account = await this.getAccountWithRetry(userAddress);
     const tx = new TransactionBuilder(account, {
       fee: BASE_FEE,
       networkPassphrase: NETWORK_PASSPHRASE,
@@ -434,7 +449,7 @@ export class OnChainRpsService {
       xdr.ScVal.scvBytes(Buffer.from(nonce)),
     ];
 
-    const account = await this.server.getAccount(userAddress);
+    const account = await this.getAccountWithRetry(userAddress);
     const tx = new TransactionBuilder(account, {
       fee: BASE_FEE,
       networkPassphrase: NETWORK_PASSPHRASE,
@@ -495,7 +510,7 @@ export class OnChainRpsService {
     args: xdr.ScVal[],
     onStatus?: (msg: string) => void,
   ): Promise<void> {
-    const account = await this.server.getAccount(keypair.publicKey());
+    const account = await this.getAccountWithRetry(keypair.publicKey());
     const tx = new TransactionBuilder(account, {
       fee: BASE_FEE,
       networkPassphrase: NETWORK_PASSPHRASE,
@@ -531,7 +546,7 @@ export class OnChainRpsService {
       .invokeHostFunctionOp()
       .hostFunction();
 
-    const account2 = await this.server.getAccount(keypair.publicKey());
+    const account2 = await this.getAccountWithRetry(keypair.publicKey());
     const finalTx = new TransactionBuilder(account2, {
       fee: (parseInt(minFee || BASE_FEE) + 100000).toString(),
       networkPassphrase: NETWORK_PASSPHRASE,
