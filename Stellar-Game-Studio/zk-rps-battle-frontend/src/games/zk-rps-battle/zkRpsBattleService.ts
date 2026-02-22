@@ -224,7 +224,7 @@ export class OnChainRpsService {
     ];
 
     const aiAccount = await this.server.getAccount(aiKeypair.publicKey());
-    const tx = new TransactionBuilder(aiAccount, {
+    const simTx = new TransactionBuilder(aiAccount, {
       fee: BASE_FEE,
       networkPassphrase: NETWORK_PASSPHRASE,
     })
@@ -233,7 +233,7 @@ export class OnChainRpsService {
       .build();
 
     onStatus?.("Simulating transaction...");
-    const sim = await this.server.simulateTransaction(tx);
+    const sim = await this.server.simulateTransaction(simTx);
     if (Api.isSimulationError(sim)) {
       throw new Error(`Simulation error: ${(sim as any).error}`);
     }
@@ -243,10 +243,20 @@ export class OnChainRpsService {
     const sorobanData = simSuccess.transactionData;
     const minFee = simSuccess.minResourceFee;
 
-    const { sequence } = await this.server.getLatestLedger();
-    const validUntil = sequence + 1000;
+    onStatus?.("Please approve in your wallet...");
 
-    onStatus?.("Signing AI authorization entries...");
+    const hostFn = simTx
+      .toEnvelope()
+      .v1()
+      .tx()
+      .operations()[0]
+      .body()
+      .invokeHostFunctionOp()
+      .hostFunction();
+
+    const { sequence } = await this.server.getLatestLedger();
+    const validUntil = sequence + 5000;
+
     const signedAuth: xdr.SorobanAuthorizationEntry[] = [];
     for (const entry of authEntries) {
       const creds = entry.credentials();
@@ -276,16 +286,6 @@ export class OnChainRpsService {
       }
     }
 
-    onStatus?.("Building final transaction...");
-    const hostFn = tx
-      .toEnvelope()
-      .v1()
-      .tx()
-      .operations()[0]
-      .body()
-      .invokeHostFunctionOp()
-      .hostFunction();
-
     const aiAccount2 = await this.server.getAccount(aiKeypair.publicKey());
     const finalTx = new TransactionBuilder(aiAccount2, {
       fee: (parseInt(minFee || BASE_FEE) + 100000).toString(),
@@ -298,12 +298,11 @@ export class OnChainRpsService {
         }),
       )
       .setSorobanData(sorobanData!.build())
-      .setTimeout(300)
+      .setTimeout(600)
       .build();
 
     finalTx.sign(aiKeypair);
 
-    onStatus?.("Please approve in your wallet...");
     const txXdr = finalTx.toXDR();
     const signResult = await walletSigner.signTransaction(txXdr, {
       networkPassphrase: NETWORK_PASSPHRASE,
