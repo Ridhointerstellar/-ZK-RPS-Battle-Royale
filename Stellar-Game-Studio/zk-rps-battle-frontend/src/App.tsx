@@ -44,11 +44,15 @@ export default function App() {
             fontSize: '0.8rem',
             color: '#d97706',
             lineHeight: 1.6,
-            textAlign: 'center',
+            textAlign: 'left',
           }}>
-            <strong>Important:</strong> Before connecting, make sure your Freighter wallet is switched to <strong>Testnet</strong>.
-            <br />
-            In Freighter: Settings &gt; Network &gt; Select "TESTNET"
+            <strong>Important:</strong> Make sure your wallet is on <strong>Stellar Testnet</strong> before connecting.
+            <br /><br />
+            <span style={{ fontSize: '0.75rem' }}>
+              <strong>Rabet:</strong> Auto-switches to Testnet when connecting.<br />
+              <strong>Freighter:</strong> Manually switch in Settings &gt; Network &gt; Select "TESTNET".<br />
+              <strong>xBull:</strong> Switch network in the sidebar before connecting.
+            </span>
           </div>
           <button
             onClick={() => connect().catch(() => undefined)}
@@ -79,11 +83,12 @@ export default function App() {
             textAlign: 'left',
           }}>
             <strong style={{ color: 'var(--color-ink)' }}>How it works:</strong><br />
-            1. Switch Freighter wallet to Testnet network<br />
-            2. Connect your wallet and choose Rock, Paper, or Scissors<br />
-            3. Your choice is cryptographically committed on-chain (hash of choice + nonce)<br />
-            4. After both players commit, choices are revealed and verified by the smart contract<br />
-            5. The contract ensures no one can cheat or front-run
+            1. Ensure your wallet is on Stellar Testnet<br />
+            2. Connect your wallet (Freighter, Rabet, xBull, or others)<br />
+            3. Choose Rock, Paper, or Scissors<br />
+            4. Your choice is cryptographically committed on-chain (hash of choice + nonce)<br />
+            5. After both players commit, choices are revealed and verified by the smart contract<br />
+            6. The contract ensures no one can cheat or front-run
           </div>
         </div>
       )}
