@@ -87,6 +87,7 @@ function generateSessionId(): number {
 async function pollTransaction(
   server: Server,
   txHash: string,
+  label = "Transaction",
 ): Promise<Api.GetSuccessfulTransactionResponse> {
   for (let i = 0; i < 30; i++) {
     const resp = await server.getTransaction(txHash);
@@ -94,11 +95,28 @@ async function pollTransaction(
       return resp as Api.GetSuccessfulTransactionResponse;
     }
     if (resp.status === Api.GetTransactionStatus.FAILED) {
-      throw new Error("Transaction failed on-chain");
+      const failedResp = resp as Api.GetFailedTransactionResponse;
+      let detail = "";
+      try {
+        if (failedResp.resultXdr) {
+          const result = typeof failedResp.resultXdr === "string"
+            ? xdr.TransactionResult.fromXDR(failedResp.resultXdr, "base64")
+            : failedResp.resultXdr;
+          const resultCode = result.result().switch().name;
+          const opResults = result.result().results();
+          const opCodes = opResults?.map((r: any) => {
+            try { return r.tr().switch().name; } catch { return "unknown"; }
+          }) || [];
+          detail = ` | result=${resultCode}, ops=[${opCodes.join(",")}]`;
+        }
+      } catch (e: any) {
+        detail = ` | (could not parse resultXdr: ${e.message})`;
+      }
+      throw new Error(`${label} failed on-chain (hash=${txHash})${detail}`);
     }
     await new Promise((r) => setTimeout(r, 2000));
   }
-  throw new Error("Transaction polling timed out");
+  throw new Error(`${label} polling timed out (hash=${txHash})`);
 }
 
 export class OnChainRpsService {
@@ -321,7 +339,7 @@ export class OnChainRpsService {
     }
 
     onStatus?.("Waiting for confirmation...");
-    await pollTransaction(this.server, sendRes.hash);
+    await pollTransaction(this.server, sendRes.hash, "start_ai_game");
 
     return sessionId;
   }
@@ -376,7 +394,7 @@ export class OnChainRpsService {
     }
 
     onStatus?.("Waiting for confirmation...");
-    await pollTransaction(this.server, sendRes.hash);
+    await pollTransaction(this.server, sendRes.hash, "commit_choice_user");
   }
 
   async commitChoiceAi(
@@ -446,7 +464,7 @@ export class OnChainRpsService {
     }
 
     onStatus?.("Waiting for confirmation...");
-    await pollTransaction(this.server, sendRes.hash);
+    await pollTransaction(this.server, sendRes.hash, "reveal_choice_user");
   }
 
   async revealChoiceAi(
@@ -535,7 +553,7 @@ export class OnChainRpsService {
     }
 
     onStatus?.("Waiting for confirmation...");
-    await pollTransaction(this.server, sendRes.hash);
+    await pollTransaction(this.server, sendRes.hash, `${method}_ai`);
   }
 
   getChoiceEmoji(choice: Choice): string {
