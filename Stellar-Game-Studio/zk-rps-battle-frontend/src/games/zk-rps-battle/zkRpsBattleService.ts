@@ -7,7 +7,7 @@ import {
   scValToNative,
   xdr,
   Operation,
-  hash,
+  authorizeEntry,
 } from "@stellar/stellar-sdk";
 import { Server, Api, assembleTransaction } from "@stellar/stellar-sdk/rpc";
 import { keccak256 } from "js-sha3";
@@ -83,46 +83,6 @@ function generateSessionId(): number {
   return buf[0] & 0x7fffffff;
 }
 
-function signSorobanAuthEntry(
-  entry: xdr.SorobanAuthorizationEntry,
-  keypair: Keypair,
-  validUntilLedgerSeq: number,
-  networkPassphrase: string,
-): xdr.SorobanAuthorizationEntry {
-  const addrCreds = entry.credentials().address();
-  addrCreds.signatureExpirationLedger(validUntilLedgerSeq);
-
-  const networkId = hash(Buffer.from(networkPassphrase));
-
-  const preimage = xdr.HashIdPreimage.envelopeTypeSorobanAuthorization(
-    new xdr.HashIdPreimageSorobanAuthorization({
-      networkId: networkId,
-      nonce: addrCreds.nonce(),
-      signatureExpirationLedger: validUntilLedgerSeq,
-      invocation: entry.rootInvocation(),
-    }),
-  );
-
-  const preimageHash = hash(preimage.toXDR());
-  const signature = keypair.sign(preimageHash);
-
-  addrCreds.signature(
-    xdr.ScVal.scvVec([
-      xdr.ScVal.scvMap([
-        new xdr.ScMapEntry({
-          key: xdr.ScVal.scvSymbol("public_key"),
-          val: xdr.ScVal.scvBytes(keypair.rawPublicKey()),
-        }),
-        new xdr.ScMapEntry({
-          key: xdr.ScVal.scvSymbol("signature"),
-          val: xdr.ScVal.scvBytes(signature),
-        }),
-      ]),
-    ]),
-  );
-
-  return entry;
-}
 
 async function pollTransaction(
   server: Server,
@@ -302,14 +262,13 @@ export class OnChainRpsService {
         ).toString();
 
         if (entryAddr === aiKeypair.publicKey()) {
-          signedAuth.push(
-            signSorobanAuthEntry(
-              entry,
-              aiKeypair,
-              validUntil,
-              NETWORK_PASSPHRASE,
-            ),
+          const signed = await authorizeEntry(
+            entry,
+            aiKeypair,
+            validUntil,
+            NETWORK_PASSPHRASE,
           );
+          signedAuth.push(signed);
         } else if (entryAddr === userAddress) {
           const sourceAuth = new xdr.SorobanAuthorizationEntry({
             credentials: xdr.SorobanCredentials.sorobanCredentialsSourceAccount(),
@@ -535,9 +494,10 @@ export class OnChainRpsService {
     const { sequence } = await this.server.getLatestLedger();
     const validUntil = sequence + 10000;
 
-    const signedAuth = authEntries.map(
-      (entry: xdr.SorobanAuthorizationEntry) =>
-        signSorobanAuthEntry(entry, keypair, validUntil, NETWORK_PASSPHRASE),
+    const signedAuth = await Promise.all(
+      authEntries.map((entry: xdr.SorobanAuthorizationEntry) =>
+        authorizeEntry(entry, keypair, validUntil, NETWORK_PASSPHRASE),
+      ),
     );
 
     const hostFn = tx
