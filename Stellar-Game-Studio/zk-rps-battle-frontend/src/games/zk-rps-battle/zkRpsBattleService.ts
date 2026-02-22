@@ -258,8 +258,8 @@ export class OnChainRpsService {
       nativeToScVal(1000n, { type: "i128" }),
     ];
 
-    const aiAccount = await this.getAccountWithRetry(aiKeypair.publicKey());
-    const simTx = new TransactionBuilder(aiAccount, {
+    const userAccount = await this.getAccountWithRetry(userAddress);
+    const simTx = new TransactionBuilder(userAccount, {
       fee: BASE_FEE,
       networkPassphrase: NETWORK_PASSPHRASE,
     })
@@ -310,8 +310,13 @@ export class OnChainRpsService {
               NETWORK_PASSPHRASE,
             ),
           );
+        } else if (entryAddr === userAddress) {
+          const sourceAuth = new xdr.SorobanAuthorizationEntry({
+            credentials: xdr.SorobanCredentials.sorobanCredentialsSourceAccount(),
+            rootInvocation: entry.rootInvocation(),
+          });
+          signedAuth.push(sourceAuth);
         } else {
-          creds.address().signatureExpirationLedger(validUntil);
           signedAuth.push(entry);
         }
       } else {
@@ -321,8 +326,8 @@ export class OnChainRpsService {
 
     onStatus?.("Please approve in your wallet...");
 
-    const aiAccount2 = await this.getAccountWithRetry(aiKeypair.publicKey());
-    const finalTx = new TransactionBuilder(aiAccount2, {
+    const userAccount2 = await this.getAccountWithRetry(userAddress);
+    const finalTx = new TransactionBuilder(userAccount2, {
       fee: (parseInt(minFee || BASE_FEE) + 100000).toString(),
       networkPassphrase: NETWORK_PASSPHRASE,
     })
@@ -335,8 +340,6 @@ export class OnChainRpsService {
       .setSorobanData(sorobanData!.build())
       .setTimeout(1800)
       .build();
-
-    finalTx.sign(aiKeypair);
 
     const txXdr = finalTx.toXDR();
     const signResult = await walletSigner.signTransaction(txXdr, {
