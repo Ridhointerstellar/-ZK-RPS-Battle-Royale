@@ -93,10 +93,10 @@ export function ZkRpsBattleGame({
       setAiKeypair(kp);
 
       setTxStatus("Funding AI opponent from Stellar Friendbot...");
-      await service.fundFromFriendbot(kp.publicKey());
+      await service.ensureAccountFunded(kp.publicKey());
 
-      setTxStatus("Funding your account from Friendbot...");
-      await service.fundFromFriendbot(userAddress);
+      setTxStatus("Ensuring your account is funded...");
+      await service.ensureAccountFunded(userAddress);
 
       const signer = getContractSigner();
       const sid = await service.startAiGame(

@@ -150,30 +150,50 @@ export class OnChainRpsService {
     this.contract = new Contract(CONTRACT_ID);
   }
 
-  async fundFromFriendbot(address: string): Promise<void> {
-    const res = await fetch(
-      `${FRIENDBOT_URL}?addr=${encodeURIComponent(address)}`,
-    );
-    if (!res.ok) {
-      const text = await res.text();
-      if (
-        !text.includes("createAccountAlreadyExist") &&
-        !text.includes("already funded") &&
-        !text.includes("already exists")
-      ) {
-        throw new Error(`Friendbot failed: ${text}`);
+  async ensureAccountFunded(address: string): Promise<void> {
+    try {
+      await this.server.getAccount(address);
+      return;
+    } catch {
+      // Account doesn't exist, need to fund it
+    }
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const res = await fetch(
+          `${FRIENDBOT_URL}?addr=${encodeURIComponent(address)}`,
+        );
+        const text = await res.text();
+
+        if (res.ok || text.includes("already funded") || text.includes("already exists") || text.includes("createAccountAlreadyExist")) {
+          for (let i = 0; i < 15; i++) {
+            try {
+              await this.server.getAccount(address);
+              return;
+            } catch {
+              await new Promise((r) => setTimeout(r, 2000));
+            }
+          }
+        }
+
+        if (attempt < 2) {
+          await new Promise((r) => setTimeout(r, 3000));
+        }
+      } catch {
+        if (attempt < 2) {
+          await new Promise((r) => setTimeout(r, 3000));
+        }
       }
     }
 
-    for (let i = 0; i < 10; i++) {
-      try {
-        await this.server.getAccount(address);
-        return;
-      } catch {
-        await new Promise((r) => setTimeout(r, 1500));
-      }
+    try {
+      await this.server.getAccount(address);
+      return;
+    } catch {
+      throw new Error(
+        "Could not fund account. The Stellar Testnet Friendbot may be temporarily unavailable. Please try again in a moment.",
+      );
     }
-    throw new Error("Account not available after funding. Please try again.");
   }
 
   async getGame(
