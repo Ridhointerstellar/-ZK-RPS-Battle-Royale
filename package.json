@@ -1,0 +1,9 @@
+{
+  "name": "zk-rps-battle-royale",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "build": "cd Stellar-Game-Studio/zk-rps-battle-frontend && bun install && bun run build",
+    "postbuild": "cp -r Stellar-Game-Studio/zk-rps-battle-frontend/dist ./dist"
+  }
+}
