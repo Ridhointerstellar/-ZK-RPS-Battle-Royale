@@ -164,6 +164,16 @@ export class OnChainRpsService {
         throw new Error(`Friendbot failed: ${text}`);
       }
     }
+
+    for (let i = 0; i < 10; i++) {
+      try {
+        await this.server.getAccount(address);
+        return;
+      } catch {
+        await new Promise((r) => setTimeout(r, 1500));
+      }
+    }
+    throw new Error("Account not available after funding. Please try again.");
   }
 
   async getGame(
