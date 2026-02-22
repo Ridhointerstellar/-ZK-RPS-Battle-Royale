@@ -156,7 +156,11 @@ export class OnChainRpsService {
     );
     if (!res.ok) {
       const text = await res.text();
-      if (!text.includes("createAccountAlreadyExist")) {
+      if (
+        !text.includes("createAccountAlreadyExist") &&
+        !text.includes("already funded") &&
+        !text.includes("already exists")
+      ) {
         throw new Error(`Friendbot failed: ${text}`);
       }
     }
