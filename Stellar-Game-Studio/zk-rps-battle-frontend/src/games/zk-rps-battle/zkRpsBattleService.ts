@@ -264,7 +264,7 @@ export class OnChainRpsService {
       networkPassphrase: NETWORK_PASSPHRASE,
     })
       .addOperation(this.contract.call("start_ai_game", ...args))
-      .setTimeout(300)
+      .setTimeout(30)
       .build();
 
     onStatus?.("Simulating transaction...");
@@ -278,8 +278,6 @@ export class OnChainRpsService {
     const sorobanData = simSuccess.transactionData;
     const minFee = simSuccess.minResourceFee;
 
-    onStatus?.("Please approve in your wallet...");
-
     const hostFn = simTx
       .toEnvelope()
       .v1()
@@ -289,8 +287,8 @@ export class OnChainRpsService {
       .invokeHostFunctionOp()
       .hostFunction();
 
-    const { sequence } = await this.server.getLatestLedger();
-    const validUntil = sequence + 5000;
+    const ledgerInfo = await this.server.getLatestLedger();
+    const validUntil = ledgerInfo.sequence + 10000;
 
     const signedAuth: xdr.SorobanAuthorizationEntry[] = [];
     for (const entry of authEntries) {
@@ -321,6 +319,8 @@ export class OnChainRpsService {
       }
     }
 
+    onStatus?.("Please approve in your wallet...");
+
     const aiAccount2 = await this.getAccountWithRetry(aiKeypair.publicKey());
     const finalTx = new TransactionBuilder(aiAccount2, {
       fee: (parseInt(minFee || BASE_FEE) + 100000).toString(),
@@ -333,7 +333,7 @@ export class OnChainRpsService {
         }),
       )
       .setSorobanData(sorobanData!.build())
-      .setTimeout(600)
+      .setTimeout(1800)
       .build();
 
     finalTx.sign(aiKeypair);
@@ -385,7 +385,7 @@ export class OnChainRpsService {
       networkPassphrase: NETWORK_PASSPHRASE,
     })
       .addOperation(this.contract.call("commit_choice", ...args))
-      .setTimeout(300)
+      .setTimeout(1800)
       .build();
 
     onStatus?.("Simulating...");
@@ -455,7 +455,7 @@ export class OnChainRpsService {
       networkPassphrase: NETWORK_PASSPHRASE,
     })
       .addOperation(this.contract.call("reveal_choice", ...args))
-      .setTimeout(300)
+      .setTimeout(1800)
       .build();
 
     onStatus?.("Simulating...");
@@ -516,7 +516,7 @@ export class OnChainRpsService {
       networkPassphrase: NETWORK_PASSPHRASE,
     })
       .addOperation(this.contract.call(method, ...args))
-      .setTimeout(300)
+      .setTimeout(600)
       .build();
 
     const sim = await this.server.simulateTransaction(tx);
@@ -530,7 +530,7 @@ export class OnChainRpsService {
     const minFee = simSuccess.minResourceFee;
 
     const { sequence } = await this.server.getLatestLedger();
-    const validUntil = sequence + 1000;
+    const validUntil = sequence + 10000;
 
     const signedAuth = authEntries.map(
       (entry: xdr.SorobanAuthorizationEntry) =>
@@ -558,7 +558,7 @@ export class OnChainRpsService {
         }),
       )
       .setSorobanData(sorobanData!.build())
-      .setTimeout(300)
+      .setTimeout(600)
       .build();
 
     finalTx.sign(keypair);
