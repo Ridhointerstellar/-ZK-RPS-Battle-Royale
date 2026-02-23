@@ -45,6 +45,6 @@ VITE_ZK_RPS_BATTLE_CONTRACT_ID = "CDKC7PIUYAPEDFXIZ27R7EYUA5GJGTSCVO27OBHFSDUA7N
 
 [deployment]
 run = ["bash", "-c", "cd Stellar-Game-Studio/zk-rps-battle-frontend && bunx serve dist -l 5000"]
-deploymentTarget = "autoscale"
+deploymentTarget = "static"
 build = ["bash", "-c", "cd Stellar-Game-Studio/zk-rps-battle-frontend && bun install && bun run build"]
-publicDir = "Stellar-Game-Studio/zk-rps-battle-frontend/dist"
+publicDir = "dist"
