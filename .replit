@@ -44,7 +44,7 @@ packages = ["dbus"]
 VITE_ZK_RPS_BATTLE_CONTRACT_ID = "CDKC7PIUYAPEDFXIZ27R7EYUA5GJGTSCVO27OBHFSDUA7NFAY4IY3EZ3"
 
 [deployment]
-run = ["sh", "-c", "/nix/store/2x94g3skvh12651bli2ab0bmx24lxb6l-rust-mixed/bin/cargo run"]
-deploymentTarget = "static"
+run = ["bun", "run", "dev"]
+deploymentTarget = "autoscale"
 build = ["bash", "-c", "cd Stellar-Game-Studio/zk-rps-battle-frontend && bun install && bun run build"]
 publicDir = "dist"

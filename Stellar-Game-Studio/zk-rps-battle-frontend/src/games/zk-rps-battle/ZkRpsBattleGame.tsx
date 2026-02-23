@@ -288,6 +288,8 @@ export function ZkRpsBattleGame({
     const p2Emoji = service.getChoiceEmoji(lastRoundResult.p2Choice);
     const isWin = lastRoundResult.winner === "player1";
     const isLoss = lastRoundResult.winner === "player2";
+    const resultText = isWin ? "VICTORY!" : isLoss ? "DEFEATED" : "DRAW";
+    const resultColor = isWin ? "#10b981" : isLoss ? "#ef4444" : "#f59e0b";
     
     const gameEnded = onChainGame?.phase === GamePhase.GameEnd;
     const winnerAddr = onChainGame?.winner;
