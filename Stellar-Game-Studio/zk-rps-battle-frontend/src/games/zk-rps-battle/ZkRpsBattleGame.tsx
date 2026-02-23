@@ -45,12 +45,18 @@ const CSS = `
   @keyframes slideInRight { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
   @keyframes glow { 0%, 100% { box-shadow: 0 0 5px rgba(99, 102, 241, 0.3); } 50% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.6); } }
   @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  @keyframes reveal { 0% { transform: rotateY(0deg); opacity: 0; } 100% { transform: rotateY(360deg); opacity: 1; } }
 
-  .choice-btn { transition: all 0.2s ease; }
-  .choice-btn:hover:not(:disabled) { transform: translateY(-4px); box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3); }
-  .choice-btn:active:not(:disabled) { transform: translateY(-1px); }
-  .mode-btn { transition: all 0.3s ease; }
-  .mode-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2); }
+  .choice-btn { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.03); }
+  .choice-btn:hover:not(:disabled) { transform: translateY(-6px) scale(1.05); background: rgba(99, 102, 241, 0.1); border-color: rgba(99, 102, 241, 0.4); box-shadow: 0 10px 30px rgba(99, 102, 241, 0.2); }
+  .choice-btn:active:not(:disabled) { transform: translateY(-2px) scale(0.98); }
+  .mode-btn { transition: all 0.3s ease; position: relative; overflow: hidden; }
+  .mode-btn::after { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent); transition: 0.5s; }
+  .mode-btn:hover::after { left: 100%; }
+  .mode-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3); }
+  
+  .gaming-card { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 1.5rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
+  .stat-badge { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); padding: 0.5rem 1rem; border-radius: 9999px; display: flex; align-items: center; gap: 0.5rem; }
 `;
 
 export function ZkRpsBattleGame({
@@ -73,7 +79,6 @@ export function ZkRpsBattleGame({
     winner: string;
   } | null>(null);
   const [showRoundResult, setShowRoundResult] = useState(false);
-  const [previousGameState, setPreviousGameState] = useState<Game | null>(null);
 
   const aiNonceRef = useRef<Uint8Array | null>(null);
   const aiChoiceRef = useRef<number | null>(null);
@@ -92,7 +97,7 @@ export function ZkRpsBattleGame({
       const kp = Keypair.random();
       setAiKeypair(kp);
 
-      setTxStatus("Funding AI opponent from Stellar Friendbot...");
+      setTxStatus("Funding AI opponent...");
       await service.ensureAccountFunded(kp.publicKey());
 
       setTxStatus("Ensuring your account is funded...");
@@ -107,7 +112,6 @@ export function ZkRpsBattleGame({
       );
       setSessionId(sid);
 
-      setTxStatus("Reading game state from blockchain...");
       const game = await service.getGame(sid, kp.publicKey());
       setOnChainGame(game);
 
@@ -137,7 +141,7 @@ export function ZkRpsBattleGame({
         userChoiceRef.current = choice;
         setLastCommitment({ hash: userCommitHash, choice, nonce: userNonce });
 
-        setTxStatus("Committing your choice on-chain...");
+        setTxStatus("Committing choice...");
         await service.commitChoiceUser(
           sessionId,
           userAddress,
@@ -153,7 +157,7 @@ export function ZkRpsBattleGame({
         aiNonceRef.current = aiNonce;
         aiChoiceRef.current = aiChoice;
 
-        setTxStatus("AI committing choice on-chain...");
+        setTxStatus("AI committing...");
         await service.commitChoiceAi(
           sessionId,
           aiKeypair,
@@ -161,7 +165,7 @@ export function ZkRpsBattleGame({
           setTxStatus,
         );
 
-        setTxStatus("Revealing your choice on-chain...");
+        setTxStatus("Revealing choice...");
         await service.revealChoiceUser(
           sessionId,
           userAddress,
@@ -171,7 +175,7 @@ export function ZkRpsBattleGame({
           setTxStatus,
         );
 
-        setTxStatus("AI revealing choice on-chain...");
+        setTxStatus("AI revealing...");
         await service.revealChoiceAi(
           sessionId,
           aiKeypair,
@@ -180,14 +184,11 @@ export function ZkRpsBattleGame({
           setTxStatus,
         );
 
-        setTxStatus("Reading game state from blockchain...");
-        setPreviousGameState(onChainGame);
         const updatedGame = await service.getGame(
           sessionId,
           aiKeypair.publicKey(),
         );
-        setOnChainGame(updatedGame);
-
+        
         if (updatedGame) {
           const p1Wins = updatedGame.player1_wins;
           const p2Wins = updatedGame.player2_wins;
@@ -204,6 +205,7 @@ export function ZkRpsBattleGame({
             winner: roundWinner,
           });
           setShowRoundResult(true);
+          setOnChainGame(updatedGame);
         }
 
         setTxStatus("");
@@ -247,29 +249,16 @@ export function ZkRpsBattleGame({
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          gap: "0.5rem",
-          padding: "1.5rem 2rem",
-          borderRadius: "1rem",
-          border: "2px solid rgba(255,255,255,0.1)",
-          background: "rgba(255,255,255,0.05)",
+          gap: "0.75rem",
+          padding: "2rem",
+          borderRadius: "1.25rem",
           cursor: disabled ? "not-allowed" : "pointer",
-          fontSize: "3rem",
           opacity: disabled ? 0.5 : 1,
-          minWidth: "110px",
+          minWidth: "140px",
         }}
       >
-        <span style={{ fontSize: "3rem" }}>{emoji}</span>
-        <span
-          style={{
-            fontSize: "0.8rem",
-            fontWeight: 600,
-            color: "var(--color-ink-muted)",
-            textTransform: "uppercase",
-            letterSpacing: "0.05em",
-          }}
-        >
-          {name}
-        </span>
+        <span style={{ fontSize: "4rem" }}>{emoji}</span>
+        <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: "0.1em" }}>{name}</span>
       </button>
     );
   };
@@ -277,70 +266,15 @@ export function ZkRpsBattleGame({
   const renderTxStatus = () => {
     if (!loading || !txStatus) return null;
     return (
-      <div
-        style={{
-          padding: "1.25rem",
-          background:
-            "linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(168, 85, 247, 0.08))",
-          borderRadius: "1rem",
-          border: "1px solid rgba(99, 102, 241, 0.2)",
-          marginTop: "1rem",
-          animation: "fadeIn 0.3s ease",
-          textAlign: "center",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "0.75rem",
-          }}
-        >
-          <div
-            style={{
-              width: "20px",
-              height: "20px",
-              border: "2px solid var(--color-accent)",
-              borderTopColor: "transparent",
-              borderRadius: "50%",
-              animation: "spin 0.8s linear infinite",
-            }}
-          />
-          <span
-            style={{
-              fontSize: "0.85rem",
-              color: "var(--color-accent)",
-              fontWeight: 600,
-            }}
-          >
-            {txStatus}
-          </span>
+      <div style={{ padding: "1.5rem", background: "rgba(99, 102, 241, 0.1)", borderRadius: "1rem", border: "1px solid rgba(99, 102, 241, 0.2)", marginTop: "2rem", animation: "fadeIn 0.3s ease", textAlign: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "1rem" }}>
+          <div style={{ width: "24px", height: "24px", border: "3px solid var(--color-accent)", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+          <span style={{ fontSize: "1rem", color: "var(--color-accent)", fontWeight: 700 }}>{txStatus}</span>
         </div>
-
         {lastCommitment && (
-          <div
-            style={{
-              marginTop: "0.75rem",
-              background: "rgba(0,0,0,0.3)",
-              borderRadius: "0.5rem",
-              padding: "0.75rem",
-              fontFamily: "monospace",
-              fontSize: "0.65rem",
-              color: "#10b981",
-              textAlign: "left",
-            }}
-          >
-            <div style={{ marginBottom: "0.25rem" }}>
-              <span style={{ color: "var(--color-ink-muted)" }}>
-                commitment:{" "}
-              </span>
-              <span>{truncateHash(lastCommitment.hash)}</span>
-            </div>
-            <div>
-              <span style={{ color: "var(--color-ink-muted)" }}>nonce: </span>
-              <span>{truncateHash(lastCommitment.nonce)}</span>
-            </div>
+          <div style={{ marginTop: "1rem", background: "rgba(0,0,0,0.4)", borderRadius: "0.75rem", padding: "1rem", fontFamily: "monospace", fontSize: "0.75rem", color: "#10b981", textAlign: "left", border: "1px solid rgba(255,255,255,0.05)" }}>
+            <div style={{ marginBottom: "0.5rem" }}><span style={{ opacity: 0.5 }}>commitment:</span> {truncateHash(lastCommitment.hash)}</div>
+            <div><span style={{ opacity: 0.5 }}>nonce:</span> {truncateHash(lastCommitment.nonce)}</div>
           </div>
         )}
       </div>
@@ -352,208 +286,38 @@ export function ZkRpsBattleGame({
 
     const p1Emoji = service.getChoiceEmoji(lastRoundResult.p1Choice);
     const p2Emoji = service.getChoiceEmoji(lastRoundResult.p2Choice);
-    const resultText =
-      lastRoundResult.winner === "player1"
-        ? "You Win This Round!"
-        : lastRoundResult.winner === "player2"
-          ? "AI Wins This Round!"
-          : "Draw!";
-    const resultColor =
-      lastRoundResult.winner === "player1"
-        ? "#10b981"
-        : lastRoundResult.winner === "player2"
-          ? "#ef4444"
-          : "#f59e0b";
-
-    const gameEnded = onChainGame?.phase === GamePhase.GameEnd;
-    const winnerAddr = onChainGame?.winner;
-    const isUserWinner =
-      typeof winnerAddr === "string" && winnerAddr === userAddress;
+    const isWin = lastRoundResult.winner === "player1";
+    const isLoss = lastRoundResult.winner === "player2";
+    
+    const resultText = isWin ? "VICTORY!" : isLoss ? "DEFEATED" : "DRAW";
+    const resultColor = isWin ? "#10b981" : isLoss ? "#ef4444" : "#f59e0b";
 
     return (
-      <div
-        style={{
-          textAlign: "center",
-          padding: "1.5rem",
-          background: "rgba(0,0,0,0.3)",
-          borderRadius: "1rem",
-          marginTop: "1rem",
-          animation: "fadeInScale 0.4s ease",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            gap: "2rem",
-            marginBottom: "1rem",
-          }}
-        >
-          <div
-            style={{
-              textAlign: "center",
-              animation: "slideInLeft 0.4s ease",
-            }}
-          >
-            <div style={{ fontSize: "3.5rem" }}>{p1Emoji}</div>
-            <div
-              style={{
-                fontSize: "0.7rem",
-                color:
-                  lastRoundResult.winner === "player1"
-                    ? "#10b981"
-                    : "var(--color-ink-muted)",
-                marginTop: "0.25rem",
-                fontWeight: lastRoundResult.winner === "player1" ? 700 : 400,
-              }}
-            >
-              You
-            </div>
+      <div className="gaming-card" style={{ textAlign: "center", padding: "3rem", marginTop: "2rem", animation: "fadeInScale 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)", background: "rgba(0,0,0,0.4)" }}>
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "4rem", marginBottom: "2rem" }}>
+          <div style={{ textAlign: "center", animation: "reveal 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)" }}>
+            <div style={{ fontSize: "5rem", filter: "drop-shadow(0 0 20px rgba(16, 185, 129, 0.4))" }}>{p1Emoji}</div>
+            <div style={{ fontSize: "0.9rem", color: isWin ? "#10b981" : "rgba(255,255,255,0.5)", marginTop: "1rem", fontWeight: 800, letterSpacing: "0.2em" }}>YOU</div>
           </div>
-          <div
-            style={{
-              fontSize: "1.25rem",
-              fontWeight: 700,
-              color: "var(--color-ink-muted)",
-              padding: "0.5rem",
-              borderRadius: "50%",
-              background: "rgba(255,255,255,0.05)",
-            }}
-          >
-            VS
-          </div>
-          <div
-            style={{
-              textAlign: "center",
-              animation: "slideInRight 0.4s ease",
-            }}
-          >
-            <div style={{ fontSize: "3.5rem" }}>{p2Emoji}</div>
-            <div
-              style={{
-                fontSize: "0.7rem",
-                color:
-                  lastRoundResult.winner === "player2"
-                    ? "#ef4444"
-                    : "var(--color-ink-muted)",
-                marginTop: "0.25rem",
-                fontWeight: lastRoundResult.winner === "player2" ? 700 : 400,
-              }}
-            >
-              AI
-            </div>
+          <div style={{ fontSize: "2rem", fontWeight: 900, color: "rgba(255,255,255,0.1)", fontStyle: "italic" }}>VS</div>
+          <div style={{ textAlign: "center", animation: "reveal 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both" }}>
+            <div style={{ fontSize: "5rem", filter: "drop-shadow(0 0 20px rgba(239, 68, 68, 0.4))" }}>{p2Emoji}</div>
+            <div style={{ fontSize: "0.9rem", color: isLoss ? "#ef4444" : "rgba(255,255,255,0.5)", marginTop: "1rem", fontWeight: 800, letterSpacing: "0.2em" }}>AI</div>
           </div>
         </div>
 
-        <div
-          style={{
-            fontSize: "1.25rem",
-            fontWeight: 700,
-            color: resultColor,
-            marginBottom: "0.5rem",
-          }}
-        >
-          {resultText}
-        </div>
-
-        <div
-          style={{
-            fontSize: "0.7rem",
-            color: "var(--color-ink-muted)",
-            marginBottom: "0.5rem",
-          }}
-        >
-          Verified on-chain via ZK commit-reveal
-        </div>
-
-        {gameEnded ? (
-          <div style={{ animation: "fadeIn 0.5s ease", marginTop: "1rem" }}>
-            <div
-              style={{
-                fontSize: "1.5rem",
-                fontWeight: 700,
-                color: isUserWinner ? "#10b981" : "#ef4444",
-                marginBottom: "0.5rem",
-              }}
-            >
-              {isUserWinner
-                ? "\uD83C\uDF89 Match Victory!"
-                : "Match Defeat"}
-            </div>
-            <div
-              style={{
-                fontSize: "0.85rem",
-                color: "var(--color-ink-muted)",
-                marginBottom: "1.25rem",
-              }}
-            >
-              Final Score: {onChainGame?.player1_wins} -{" "}
-              {onChainGame?.player2_wins}
-            </div>
-            <div
-              style={{
-                display: "flex",
-                gap: "0.75rem",
-                justifyContent: "center",
-              }}
-            >
-              <button
-                onClick={startVsAi}
-                className="mode-btn"
-                style={{
-                  padding: "0.75rem 1.75rem",
-                  borderRadius: "0.75rem",
-                  background:
-                    "linear-gradient(135deg, var(--color-accent), #7c3aed)",
-                  color: "white",
-                  border: "none",
-                  cursor: "pointer",
-                  fontWeight: 600,
-                }}
-              >
-                Play Again
-              </button>
-              <button
-                onClick={() => {
-                  setMode("menu");
-                  setSessionId(null);
-                  setOnChainGame(null);
-                  onGameComplete();
-                }}
-                className="mode-btn"
-                style={{
-                  padding: "0.75rem 1.75rem",
-                  borderRadius: "0.75rem",
-                  background: "rgba(255,255,255,0.08)",
-                  color: "var(--color-ink)",
-                  border: "1px solid rgba(255,255,255,0.15)",
-                  cursor: "pointer",
-                  fontWeight: 600,
-                }}
-              >
-                Menu
-              </button>
+        <div style={{ fontSize: "3rem", fontWeight: 900, color: resultColor, marginBottom: "1rem", letterSpacing: "0.1em" }}>{resultText}</div>
+        
+        {onChainGame?.phase === GamePhase.GameEnd ? (
+          <div style={{ marginTop: "2rem", animation: "fadeIn 0.5s ease" }}>
+            <h3 style={{ fontSize: "1.5rem", fontWeight: 800, color: "#fff", marginBottom: "2rem" }}>MATCH COMPLETE</h3>
+            <div style={{ display: "flex", gap: "1rem", justifyContent: "center" }}>
+              <button onClick={startVsAi} className="mode-btn" style={{ padding: "1rem 2.5rem", borderRadius: "1rem", background: "linear-gradient(135deg, #6366f1, #a855f7)", color: "#fff", border: "none", fontWeight: 800, cursor: "pointer" }}>REMATCH</button>
+              <button onClick={() => setMode("menu")} className="mode-btn" style={{ padding: "1rem 2.5rem", borderRadius: "1rem", background: "rgba(255,255,255,0.1)", color: "#fff", border: "1px solid rgba(255,255,255,0.2)", fontWeight: 800, cursor: "pointer" }}>MENU</button>
             </div>
           </div>
         ) : (
-          <button
-            onClick={handleNextRound}
-            className="mode-btn"
-            style={{
-              marginTop: "0.75rem",
-              padding: "0.75rem 2rem",
-              borderRadius: "0.75rem",
-              background:
-                "linear-gradient(135deg, var(--color-accent), #7c3aed)",
-              color: "white",
-              border: "none",
-              cursor: "pointer",
-              fontWeight: 600,
-            }}
-          >
-            Next Round \u2192
-          </button>
+          <button onClick={handleNextRound} className="mode-btn" style={{ marginTop: "2rem", padding: "1rem 3rem", borderRadius: "1rem", background: "linear-gradient(135deg, #6366f1, #a855f7)", color: "#fff", border: "none", fontWeight: 800, cursor: "pointer" }}>NEXT ROUND</button>
         )}
       </div>
     );
@@ -562,452 +326,89 @@ export function ZkRpsBattleGame({
   const renderScoreboard = () => {
     if (!onChainGame) return null;
     return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-around",
-          alignItems: "center",
-          padding: "1rem 1.5rem",
-          background:
-            "linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(239, 68, 68, 0.05))",
-          borderRadius: "0.75rem",
-          marginBottom: "1rem",
-          border: "1px solid rgba(255,255,255,0.05)",
-        }}
-      >
+      <div style={{ display: "flex", justifyContent: "space-around", alignItems: "center", padding: "2rem", background: "rgba(255,255,255,0.03)", borderRadius: "1.25rem", marginBottom: "2rem", border: "1px solid rgba(255,255,255,0.05)" }}>
         <div style={{ textAlign: "center" }}>
-          <div
-            style={{
-              fontSize: "0.65rem",
-              color: "var(--color-ink-muted)",
-              textTransform: "uppercase",
-              letterSpacing: "0.1em",
-              marginBottom: "0.25rem",
-            }}
-          >
-            You
-          </div>
-          <div
-            style={{
-              fontSize: "2rem",
-              fontWeight: 700,
-              color: "#10b981",
-              lineHeight: 1,
-            }}
-          >
-            {onChainGame.player1_wins}
-          </div>
+          <div style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.5)", fontWeight: 800, textTransform: "uppercase", marginBottom: "0.5rem" }}>YOU</div>
+          <div style={{ fontSize: "3.5rem", fontWeight: 900, color: "#10b981" }}>{onChainGame.player1_wins}</div>
         </div>
         <div style={{ textAlign: "center" }}>
-          <div
-            style={{
-              fontSize: "0.65rem",
-              color: "var(--color-ink-muted)",
-              textTransform: "uppercase",
-              marginBottom: "0.25rem",
-            }}
-          >
-            Round
-          </div>
-          <div
-            style={{
-              fontSize: "1.5rem",
-              fontWeight: 700,
-              color: "var(--color-ink)",
-              lineHeight: 1,
-            }}
-          >
-            {onChainGame.current_round}
-            <span
-              style={{
-                color: "var(--color-ink-muted)",
-                fontWeight: 400,
-              }}
-            >
-              /{onChainGame.max_rounds}
-            </span>
-          </div>
+          <div style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.5)", fontWeight: 800, textTransform: "uppercase", marginBottom: "0.5rem" }}>ROUND</div>
+          <div style={{ fontSize: "2rem", fontWeight: 900 }}>{onChainGame.current_round}<span style={{ opacity: 0.3 }}>/{onChainGame.max_rounds}</span></div>
         </div>
         <div style={{ textAlign: "center" }}>
-          <div
-            style={{
-              fontSize: "0.65rem",
-              color: "var(--color-ink-muted)",
-              textTransform: "uppercase",
-              letterSpacing: "0.1em",
-              marginBottom: "0.25rem",
-            }}
-          >
-            AI
-          </div>
-          <div
-            style={{
-              fontSize: "2rem",
-              fontWeight: 700,
-              color: "#ef4444",
-              lineHeight: 1,
-            }}
-          >
-            {onChainGame.player2_wins}
-          </div>
+          <div style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.5)", fontWeight: 800, textTransform: "uppercase", marginBottom: "0.5rem" }}>AI</div>
+          <div style={{ fontSize: "3.5rem", fontWeight: 900, color: "#ef4444" }}>{onChainGame.player2_wins}</div>
         </div>
       </div>
     );
   };
 
   const renderContractInfo = () => (
-    <div
-      style={{
-        marginTop: "1.25rem",
-        padding: "0.75rem 1rem",
-        background: "rgba(0,0,0,0.15)",
-        borderRadius: "0.75rem",
-        border: "1px solid rgba(255,255,255,0.05)",
-      }}
-    >
-      <div
-        style={{
-          fontSize: "0.65rem",
-          fontWeight: 700,
-          color: "var(--color-ink-muted)",
-          textTransform: "uppercase",
-          letterSpacing: "0.1em",
-          marginBottom: "0.5rem",
-        }}
-      >
-        On-Chain Contract
-      </div>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "0.5rem",
-          marginBottom: "0.35rem",
-        }}
-      >
-        <span
-          style={{
-            display: "inline-block",
-            width: "6px",
-            height: "6px",
-            borderRadius: "50%",
-            background: "#10b981",
-            animation: "pulse 2s infinite",
-          }}
-        />
-        <span
-          style={{ fontSize: "0.65rem", color: "#10b981", fontWeight: 600 }}
-        >
-          Deployed on Stellar Testnet
-        </span>
-      </div>
-      <div
-        style={{
-          fontFamily: "monospace",
-          fontSize: "0.6rem",
-          color: "var(--color-ink-muted)",
-          wordBreak: "break-all",
-          marginBottom: "0.5rem",
-        }}
-      >
-        {CONTRACT_ID}
-      </div>
-      {sessionId && (
-        <div
-          style={{
-            fontFamily: "monospace",
-            fontSize: "0.6rem",
-            color: "var(--color-ink-muted)",
-            marginBottom: "0.5rem",
-          }}
-        >
-          Session ID: {sessionId}
-        </div>
-      )}
-      <a
-        href={`https://stellar.expert/explorer/testnet/contract/${CONTRACT_ID}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{
-          fontSize: "0.6rem",
-          color: "var(--color-accent)",
-          textDecoration: "none",
-          fontWeight: 600,
-        }}
-      >
-        View on Stellar Expert \u2197
-      </a>
+    <div style={{ marginTop: "2rem", padding: "1.5rem", background: "rgba(0,0,0,0.2)", borderRadius: "1rem", border: "1px solid rgba(255,255,255,0.05)" }}>
+      <div style={{ fontSize: "0.75rem", fontWeight: 800, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: "1rem" }}>Blockchain Protocol</div>
+      <div style={{ fontFamily: "monospace", fontSize: "0.7rem", color: "rgba(255,255,255,0.3)", wordBreak: "break-all", marginBottom: "1rem" }}>{CONTRACT_ID}</div>
+      <a href={`https://stellar.expert/explorer/testnet/contract/${CONTRACT_ID}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: "0.75rem", color: "var(--color-accent)", textDecoration: "none", fontWeight: 800 }}>EXPLORER \u2197</a>
     </div>
   );
 
   const renderZkBadge = () => (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "0.5rem",
-        padding: "0.5rem 1rem",
-        background: "rgba(99, 102, 241, 0.08)",
-        borderRadius: "999px",
-        border: "1px solid rgba(99, 102, 241, 0.15)",
-        fontSize: "0.7rem",
-        color: "var(--color-accent)",
-        fontWeight: 600,
-        width: "fit-content",
-        margin: "0 auto 1rem",
-      }}
-    >
-      <span style={{ fontSize: "0.85rem" }}>{"\uD83D\uDD12"}</span>
-      On-Chain ZK Commit-Reveal
-      <span
-        style={{
-          display: "inline-block",
-          width: "6px",
-          height: "6px",
-          borderRadius: "50%",
-          background: "#10b981",
-          animation: "pulse 2s infinite",
-        }}
-      />
+    <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", padding: "0.6rem 1.25rem", background: "rgba(99, 102, 241, 0.15)", borderRadius: "999px", border: "1px solid rgba(99, 102, 241, 0.3)", fontSize: "0.75rem", color: "var(--color-accent)", fontWeight: 800 }}>
+      <span style={{ fontSize: "1rem" }}>{"\uD83D\uDD12"}</span> ZK-SECURE
     </div>
   );
 
   if (mode === "menu") {
     return (
-      <div style={{ maxWidth: "600px", margin: "0 auto" }}>
+      <div className="gaming-card" style={{ maxWidth: "600px", margin: "0 auto", padding: "3rem" }}>
         <style>{CSS}</style>
-
         {renderZkBadge()}
-
-        <div
-          style={{
-            textAlign: "center",
-            marginBottom: "2rem",
-            animation: "fadeIn 0.5s ease",
-          }}
-        >
-          <div
-            style={{
-              fontSize: "4rem",
-              marginBottom: "0.5rem",
-              animation: "float 3s ease-in-out infinite",
-            }}
-          >
-            {"\u270A\u270B\u2702\uFE0F"}
-          </div>
-          <h2
-            style={{
-              fontSize: "1.5rem",
-              fontWeight: 700,
-              marginBottom: "0.5rem",
-              background: "linear-gradient(135deg, #6366f1, #a855f7)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-            }}
-          >
-            Choose Your Battle Mode
-          </h2>
-          <p style={{ color: "var(--color-ink-muted)", fontSize: "0.85rem" }}>
-            All moves are committed and verified on-chain via Stellar Testnet
-          </p>
-          <p
-            style={{
-              color: "var(--color-ink-muted)",
-              fontSize: "0.7rem",
-              marginTop: "0.5rem",
-            }}
-          >
-            Connected: {truncateAddress(userAddress)}
-          </p>
+        <div style={{ textAlign: "center", margin: "3rem 0" }}>
+          <div style={{ fontSize: "6rem", marginBottom: "1rem", animation: "float 3s ease-in-out infinite" }}>{"\u270A\u270B\u2702\uFE0F"}</div>
+          <h2 style={{ fontSize: "3rem", fontWeight: 900, marginBottom: "1rem", background: "linear-gradient(to bottom, #fff, #6366f1)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>ZK BATTLE</h2>
+          <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "1.1rem" }}>Provably fair on-chain RPS</p>
         </div>
-
-        <div style={{ display: "grid", gap: "1rem" }}>
-          <button
-            onClick={startVsAi}
-            disabled={loading}
-            className="mode-btn"
-            style={{
-              padding: "1.5rem",
-              borderRadius: "1rem",
-              border: "1px solid rgba(99, 102, 241, 0.3)",
-              background:
-                "linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.08))",
-              cursor: loading ? "not-allowed" : "pointer",
-              textAlign: "left",
-              opacity: loading ? 0.6 : 1,
-            }}
-          >
-            <div
-              style={{ display: "flex", alignItems: "center", gap: "1rem" }}
-            >
-              <span style={{ fontSize: "2.5rem" }}>{"\uD83E\uDD16"}</span>
-              <div>
-                <div
-                  style={{
-                    fontWeight: 700,
-                    fontSize: "1.1rem",
-                    color: "var(--color-ink)",
-                    marginBottom: "0.25rem",
-                  }}
-                >
-                  VS AI (On-Chain)
-                </div>
-                <div style={{ fontSize: "0.8rem", color: "var(--color-ink-muted)" }}>
-                  Play against AI with every move committed and verified on the
-                  Stellar blockchain. Best of 3 rounds.
-                </div>
-              </div>
+        <button onClick={startVsAi} disabled={loading} className="mode-btn" style={{ width: "100%", padding: "2rem", borderRadius: "1.5rem", border: "1px solid rgba(99, 102, 241, 0.4)", background: "linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.15))", cursor: "pointer" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
+            <span style={{ fontSize: "3.5rem" }}>{"\uD83E\uDD16"}</span>
+            <div style={{ textAlign: "left" }}>
+              <div style={{ fontWeight: 900, fontSize: "1.5rem", color: "#fff" }}>START BATTLE</div>
+              <div style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.9rem" }}>Versus AI • Best of 3 • ZK Verified</div>
             </div>
-          </button>
-        </div>
-
+          </div>
+        </button>
         {loading && renderTxStatus()}
-
-        <div
-          style={{
-            marginTop: "1.5rem",
-            padding: "1rem",
-            background: "rgba(0,0,0,0.1)",
-            borderRadius: "0.75rem",
-            fontSize: "0.75rem",
-            color: "var(--color-ink-muted)",
-            lineHeight: 1.7,
-            border: "1px solid rgba(255,255,255,0.03)",
-          }}
-        >
-          <strong style={{ color: "var(--color-ink)" }}>
-            How ZK Commit-Reveal Works On-Chain:
-          </strong>
-          <br />
-          1. You choose Rock, Paper, or Scissors
-          <br />
-          2. Your choice is hashed with a random nonce (keccak256) and committed
-          to the contract
-          <br />
-          3. AI also commits its hashed choice on-chain
-          <br />
-          4. Both players reveal their choice + nonce — the contract verifies
-          the hash matches
-          <br />
-          5. Winner is determined on-chain — no cheating possible!
-        </div>
-
         {renderContractInfo()}
       </div>
     );
   }
 
   return (
-    <div style={{ maxWidth: "600px", margin: "0 auto" }}>
+    <div className="gaming-card" style={{ padding: "3rem", maxWidth: "800px", margin: "0 auto", animation: "fadeIn 0.5s ease" }}>
       <style>{CSS}</style>
-
-      {renderZkBadge()}
-
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "1rem",
-        }}
-      >
-        <button
-          onClick={() => {
-            setMode("menu");
-            setSessionId(null);
-            setOnChainGame(null);
-          }}
-          className="mode-btn"
-          style={{
-            padding: "0.35rem 0.75rem",
-            borderRadius: "0.5rem",
-            background: "rgba(255,255,255,0.05)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            cursor: "pointer",
-            fontSize: "0.75rem",
-            color: "var(--color-ink-muted)",
-          }}
-        >
-          \u2190 Back
-        </button>
-        <span
-          style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--color-ink)" }}
-        >
-          VS AI (On-Chain)
-        </span>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "3rem" }}>
+        <div>
+          <h2 style={{ fontSize: "2rem", fontWeight: 900, color: "#fff", letterSpacing: "-0.02em" }}>ARENA</h2>
+          <div className="stat-badge"><span style={{ width: 8, height: 8, background: "#10b981", borderRadius: "50%" }} /> <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "rgba(255,255,255,0.6)" }}>SESSION #{sessionId}</span></div>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "1rem" }}>
+          <button onClick={() => setMode("menu")} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", fontSize: "0.8rem", fontWeight: 800 }}>QUIT</button>
+          {renderZkBadge()}
+        </div>
       </div>
 
-      {onChainGame && onChainGame.phase !== GamePhase.GameEnd && (
-        <>
-          {renderScoreboard()}
+      {renderScoreboard()}
 
-          {!showRoundResult && !loading && (
-            <div style={{ textAlign: "center", animation: "fadeIn 0.3s ease" }}>
-              <div
-                style={{
-                  fontSize: "0.85rem",
-                  color: "var(--color-ink-muted)",
-                  marginBottom: "1rem",
-                }}
-              >
-                Choose your move:
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "center",
-                  gap: "1rem",
-                }}
-              >
-                {renderChoiceButton(Choice.Rock)}
-                {renderChoiceButton(Choice.Paper)}
-                {renderChoiceButton(Choice.Scissors)}
-              </div>
-            </div>
-          )}
-        </>
-      )}
-
-      {renderTxStatus()}
-
-      {error && (
-        <div
-          style={{
-            padding: "1rem",
-            background: "rgba(239, 68, 68, 0.1)",
-            borderRadius: "0.75rem",
-            border: "1px solid rgba(239, 68, 68, 0.3)",
-            marginTop: "1rem",
-            fontSize: "0.8rem",
-            color: "#ef4444",
-          }}
-        >
-          <strong>Error:</strong> {error}
-          <div style={{ marginTop: "0.5rem" }}>
-            <button
-              onClick={() => {
-                setError(null);
-                setLoading(false);
-              }}
-              style={{
-                padding: "0.35rem 0.75rem",
-                borderRadius: "0.5rem",
-                background: "rgba(239, 68, 68, 0.2)",
-                border: "1px solid rgba(239, 68, 68, 0.3)",
-                color: "#ef4444",
-                cursor: "pointer",
-                fontSize: "0.75rem",
-              }}
-            >
-              Dismiss
-            </button>
+      {!showRoundResult && !loading && (
+        <div style={{ textAlign: "center", margin: "4rem 0" }}>
+          <div style={{ display: "flex", justifyContent: "center", gap: "2rem" }}>
+            {[Choice.Rock, Choice.Paper, Choice.Scissors].map(renderChoiceButton)}
           </div>
         </div>
       )}
 
+      {renderTxStatus()}
       {renderRoundResult()}
-
-      {onChainGame && renderContractInfo()}
+      {renderContractInfo()}
     </div>
   );
 }
