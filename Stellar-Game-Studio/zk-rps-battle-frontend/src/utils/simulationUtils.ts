@@ -23,6 +23,10 @@ async function ensureTestnetAccountFunded(address: string): Promise<void> {
 
   const fundRes = await fetch(`https://friendbot.stellar.org?addr=${address}`, { method: 'GET' });
   if (!fundRes.ok) {
+    const text = await fundRes.text();
+    if (text.includes("already funded") || text.includes("already exists") || text.includes("createAccountAlreadyExist")) {
+      return;
+    }
     throw new Error(`Friendbot funding failed (${fundRes.status}) for ${address}`);
   }
 
