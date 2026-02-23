@@ -1,0 +1,26 @@
+Submission Requirements
+1) A ZK-Powered Mechanic
+Your project must use ZK in a meaningful way. The ZK proof should power a core mechanic, not just appear in a demo slide.
+
+2) A Deployed Onchain Component
+Submissions require an onchain component deployed on Stellar Testnet (contracts and any onchain state that your game relies on). Your game contracts must call start_game() and end_game() in the game hub contract: CB4VZAT2U3UC6XFK3N23SKRF2NDCMP3QHJYMCHHFMZO7MRQO6DQ2EMYG
+
+The game studio is an optional starting point to get you building as quickly as possible, it is not a requirement to use it for the hackathon. However interaction with the game hub mock contract to call start_game() and end_game() is a requirement and there are examples in the studio and an interface here: https://stellar.expert/explorer/testnet/contract/CB4VZAT2U3UC6XFK3N23SKRF2NDCMP3QHJYMCHHFMZO7MRQO6DQ2EMYG?filter=interface
+
+3) A Front End
+A functional user interface is required. Judges should be able to see gameplay and understand how the ZK mechanic and onchain component connect to the player experience.
+
+4) Open-source Repo
+A public GitHub/GitLab repository link containing the full source code and a clear README.md.
+
+5) Video Demo
+A 2-3 minute video demonstration showing the gameplay and explaining the ZK implementation to assist judges in understanding your submission.
+
+Inspiration & Ideas
+Need a spark? Here are a few ZK-native directions that make games more fair, more private, or more interesting:
+
+Hidden-information games: Players commit privately (moves, cards, loadouts) and prove validity without revealing everything.
+Provable outcomes: Resolve a match with verifiable computation so players can audit results.
+Private actions / fog-of-war: Keep state hidden while still proving that each step is valid.
+Provable randomness: Prove fairness without leaking seeds or relying on a trusted server.
+Puzzle / strategy proofs: Prove a solution is valid without revealing the solution itself.
