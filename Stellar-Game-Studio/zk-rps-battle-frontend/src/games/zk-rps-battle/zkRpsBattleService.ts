@@ -351,45 +351,18 @@ export class OnChainRpsService {
     walletSigner: ContractSigner,
     onStatus?: (msg: string) => void,
   ): Promise<void> {
-    onStatus?.("Building commit transaction...");
-
-    const args = [
-      nativeToScVal(sessionId, { type: "u32" }),
-      new Address(userAddress).toScVal(),
-      xdr.ScVal.scvBytes(Buffer.from(commitment)),
-    ];
-
-    const account = await this.getAccountWithRetry(userAddress);
-    const tx = new TransactionBuilder(account, {
-      fee: BASE_FEE,
-      networkPassphrase: NETWORK_PASSPHRASE,
-    })
-      .addOperation(this.contract.call("commit_choice", ...args))
-      .setTimeout(1800)
-      .build();
-
-    onStatus?.("Simulating...");
-    const prepared = await this.server.prepareTransaction(tx);
-
-    onStatus?.("Please approve in your wallet...");
-    const txXdr = prepared.toXDR();
-    const signResult = await walletSigner.signTransaction(txXdr, {
-      networkPassphrase: NETWORK_PASSPHRASE,
-    });
-    if (signResult.error) throw new Error(signResult.error.message);
-
-    onStatus?.("Submitting to Stellar Testnet...");
-    const signedTx = TransactionBuilder.fromXDR(
-      signResult.signedTxXdr,
-      NETWORK_PASSPHRASE,
+    await this._submitWithWallet(
+      userAddress,
+      "commit_choice",
+      [
+        nativeToScVal(sessionId, { type: "u32" }),
+        new Address(userAddress).toScVal(),
+        xdr.ScVal.scvBytes(Buffer.from(commitment)),
+      ],
+      walletSigner,
+      "commit_choice_user",
+      onStatus,
     );
-    const sendRes = await this.server.sendTransaction(signedTx);
-    if (sendRes.status === "ERROR") {
-      throw new Error(`Send failed: ${JSON.stringify(sendRes.errorResult)}`);
-    }
-
-    onStatus?.("Waiting for confirmation...");
-    await pollTransaction(this.server, sendRes.hash, "commit_choice_user");
   }
 
   async commitChoiceAi(
@@ -415,46 +388,19 @@ export class OnChainRpsService {
     walletSigner: ContractSigner,
     onStatus?: (msg: string) => void,
   ): Promise<void> {
-    onStatus?.("Building reveal transaction...");
-
-    const args = [
-      nativeToScVal(sessionId, { type: "u32" }),
-      new Address(userAddress).toScVal(),
-      nativeToScVal(choice, { type: "u32" }),
-      xdr.ScVal.scvBytes(Buffer.from(nonce)),
-    ];
-
-    const account = await this.getAccountWithRetry(userAddress);
-    const tx = new TransactionBuilder(account, {
-      fee: BASE_FEE,
-      networkPassphrase: NETWORK_PASSPHRASE,
-    })
-      .addOperation(this.contract.call("reveal_choice", ...args))
-      .setTimeout(1800)
-      .build();
-
-    onStatus?.("Simulating...");
-    const prepared = await this.server.prepareTransaction(tx);
-
-    onStatus?.("Please approve in your wallet...");
-    const txXdr = prepared.toXDR();
-    const signResult = await walletSigner.signTransaction(txXdr, {
-      networkPassphrase: NETWORK_PASSPHRASE,
-    });
-    if (signResult.error) throw new Error(signResult.error.message);
-
-    onStatus?.("Submitting to Stellar Testnet...");
-    const signedTx = TransactionBuilder.fromXDR(
-      signResult.signedTxXdr,
-      NETWORK_PASSPHRASE,
+    await this._submitWithWallet(
+      userAddress,
+      "reveal_choice",
+      [
+        nativeToScVal(sessionId, { type: "u32" }),
+        new Address(userAddress).toScVal(),
+        nativeToScVal(choice, { type: "u32" }),
+        xdr.ScVal.scvBytes(Buffer.from(nonce)),
+      ],
+      walletSigner,
+      "reveal_choice_user",
+      onStatus,
     );
-    const sendRes = await this.server.sendTransaction(signedTx);
-    if (sendRes.status === "ERROR") {
-      throw new Error(`Send failed: ${JSON.stringify(sendRes.errorResult)}`);
-    }
-
-    onStatus?.("Waiting for confirmation...");
-    await pollTransaction(this.server, sendRes.hash, "reveal_choice_user");
   }
 
   async revealChoiceAi(
@@ -472,6 +418,87 @@ export class OnChainRpsService {
       xdr.ScVal.scvBytes(Buffer.from(nonce)),
     ];
     await this._submitWithKeypair(aiKeypair, "reveal_choice", args, onStatus);
+  }
+
+  private async _submitWithWallet(
+    userAddress: string,
+    method: string,
+    args: xdr.ScVal[],
+    walletSigner: ContractSigner,
+    label: string,
+    onStatus?: (msg: string) => void,
+  ): Promise<void> {
+    onStatus?.("Building transaction...");
+    const account = await this.getAccountWithRetry(userAddress);
+    const tx = new TransactionBuilder(account, {
+      fee: BASE_FEE,
+      networkPassphrase: NETWORK_PASSPHRASE,
+    })
+      .addOperation(this.contract.call(method, ...args))
+      .setTimeout(30)
+      .build();
+
+    onStatus?.("Simulating...");
+    const sim = await this.server.simulateTransaction(tx);
+    if (Api.isSimulationError(sim)) {
+      throw new Error(`Simulation error: ${(sim as any).error}`);
+    }
+    const simSuccess = sim as Api.SimulateTransactionSuccessResponse;
+
+    const sorobanData = simSuccess.transactionData;
+    const minFee = simSuccess.minResourceFee;
+
+    const hostFn = tx
+      .toEnvelope()
+      .v1()
+      .tx()
+      .operations()[0]
+      .body()
+      .invokeHostFunctionOp()
+      .hostFunction();
+
+    const authEntries = simSuccess.result?.auth || [];
+    const sourceAuth = authEntries.map((entry: xdr.SorobanAuthorizationEntry) =>
+      new xdr.SorobanAuthorizationEntry({
+        credentials: xdr.SorobanCredentials.sorobanCredentialsSourceAccount(),
+        rootInvocation: entry.rootInvocation(),
+      }),
+    );
+
+    const account2 = await this.getAccountWithRetry(userAddress);
+    const finalTx = new TransactionBuilder(account2, {
+      fee: (parseInt(minFee || BASE_FEE) + 100000).toString(),
+      networkPassphrase: NETWORK_PASSPHRASE,
+    })
+      .addOperation(
+        Operation.invokeHostFunction({
+          func: hostFn,
+          auth: sourceAuth,
+        }),
+      )
+      .setSorobanData(sorobanData!.build())
+      .setTimeout(1800)
+      .build();
+
+    onStatus?.("Please approve in your wallet...");
+    const txXdr = finalTx.toXDR();
+    const signResult = await walletSigner.signTransaction(txXdr, {
+      networkPassphrase: NETWORK_PASSPHRASE,
+    });
+    if (signResult.error) throw new Error(signResult.error.message);
+
+    onStatus?.("Submitting to Stellar Testnet...");
+    const signedTx = TransactionBuilder.fromXDR(
+      signResult.signedTxXdr,
+      NETWORK_PASSPHRASE,
+    );
+    const sendRes = await this.server.sendTransaction(signedTx);
+    if (sendRes.status === "ERROR") {
+      throw new Error(`Send failed: ${JSON.stringify(sendRes.errorResult)}`);
+    }
+
+    onStatus?.("Waiting for confirmation...");
+    await pollTransaction(this.server, sendRes.hash, label);
   }
 
   private async _submitWithKeypair(
