@@ -403,7 +403,10 @@ impl ZkRpsBattleContract {
             match round_result {
                 1 => game.player1_wins += 1,
                 2 => game.player2_wins += 1,
-                _ => {}
+                _ => {
+                    game.player1_wins += 1;
+                    game.player2_wins += 1;
+                }
             }
 
             let needed_wins = (game.max_rounds / 2) + 1;

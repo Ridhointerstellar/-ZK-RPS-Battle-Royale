@@ -289,35 +289,51 @@ export function ZkRpsBattleGame({
     const isWin = lastRoundResult.winner === "player1";
     const isLoss = lastRoundResult.winner === "player2";
     
-    const resultText = isWin ? "VICTORY!" : isLoss ? "DEFEATED" : "DRAW";
-    const resultColor = isWin ? "#10b981" : isLoss ? "#ef4444" : "#f59e0b";
+    const gameEnded = onChainGame?.phase === GamePhase.GameEnd;
+    const winnerAddr = onChainGame?.winner;
+    const isUserWinner =
+      typeof winnerAddr === "string" && winnerAddr === userAddress;
+    const isAiWinner =
+      typeof winnerAddr === "string" && winnerAddr !== userAddress && winnerAddr !== "0000000000000000000000000000000000000000000000000000000000000000";
 
     return (
-      <div className="gaming-card" style={{ textAlign: "center", padding: "3rem", marginTop: "2rem", animation: "fadeInScale 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)", background: "rgba(0,0,0,0.4)" }}>
+      <div className="gaming-card" style={{ textAlign: "center", padding: "3rem", marginTop: "2rem", animation: "fadeInScale 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)", background: "rgba(0,0,0,0.4)", border: gameEnded ? `2px solid ${isUserWinner ? '#10b981' : '#ef4444'}` : '1px solid rgba(255,255,255,0.1)' }}>
+        {gameEnded && (
+          <div style={{ position: 'absolute', top: '-20px', left: '50%', transform: 'translateX(-50%)', background: isUserWinner ? '#10b981' : '#ef4444', color: 'white', padding: '0.5rem 2rem', borderRadius: '2rem', fontWeight: 900, fontSize: '1.2rem', boxShadow: '0 0 20px rgba(0,0,0,0.5)' }}>
+            {isUserWinner ? 'CHAMPION' : 'ELIMINATED'}
+          </div>
+        )}
+        
         <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "4rem", marginBottom: "2rem" }}>
           <div style={{ textAlign: "center", animation: "reveal 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)" }}>
-            <div style={{ fontSize: "5rem", filter: "drop-shadow(0 0 20px rgba(16, 185, 129, 0.4))" }}>{p1Emoji}</div>
+            <div style={{ fontSize: "5rem", filter: `drop-shadow(0 0 20px ${isWin || (gameEnded && isUserWinner) ? 'rgba(16, 185, 129, 0.6)' : 'rgba(255,255,255,0.2)'})` }}>{p1Emoji}</div>
             <div style={{ fontSize: "0.9rem", color: isWin ? "#10b981" : "rgba(255,255,255,0.5)", marginTop: "1rem", fontWeight: 800, letterSpacing: "0.2em" }}>YOU</div>
           </div>
           <div style={{ fontSize: "2rem", fontWeight: 900, color: "rgba(255,255,255,0.1)", fontStyle: "italic" }}>VS</div>
           <div style={{ textAlign: "center", animation: "reveal 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both" }}>
-            <div style={{ fontSize: "5rem", filter: "drop-shadow(0 0 20px rgba(239, 68, 68, 0.4))" }}>{p2Emoji}</div>
+            <div style={{ fontSize: "5rem", filter: `drop-shadow(0 0 20px ${isLoss || (gameEnded && isAiWinner) ? 'rgba(239, 68, 68, 0.6)' : 'rgba(255,255,255,0.2)'})` }}>{p2Emoji}</div>
             <div style={{ fontSize: "0.9rem", color: isLoss ? "#ef4444" : "rgba(255,255,255,0.5)", marginTop: "1rem", fontWeight: 800, letterSpacing: "0.2em" }}>AI</div>
           </div>
         </div>
 
-        <div style={{ fontSize: "3rem", fontWeight: 900, color: resultColor, marginBottom: "1rem", letterSpacing: "0.1em" }}>{resultText}</div>
-        
-        {onChainGame?.phase === GamePhase.GameEnd ? (
-          <div style={{ marginTop: "2rem", animation: "fadeIn 0.5s ease" }}>
-            <h3 style={{ fontSize: "1.5rem", fontWeight: 800, color: "#fff", marginBottom: "2rem" }}>MATCH COMPLETE</h3>
-            <div style={{ display: "flex", gap: "1rem", justifyContent: "center" }}>
-              <button onClick={startVsAi} className="mode-btn" style={{ padding: "1rem 2.5rem", borderRadius: "1rem", background: "linear-gradient(135deg, #6366f1, #a855f7)", color: "#fff", border: "none", fontWeight: 800, cursor: "pointer" }}>REMATCH</button>
-              <button onClick={() => setMode("menu")} className="mode-btn" style={{ padding: "1rem 2.5rem", borderRadius: "1rem", background: "rgba(255,255,255,0.1)", color: "#fff", border: "1px solid rgba(255,255,255,0.2)", fontWeight: 800, cursor: "pointer" }}>MENU</button>
+        {!gameEnded ? (
+          <>
+            <div style={{ fontSize: "3rem", fontWeight: 900, color: resultColor, marginBottom: "1rem", letterSpacing: "0.1em" }}>{resultText}</div>
+            <button onClick={handleNextRound} className="mode-btn" style={{ marginTop: "2rem", padding: "1rem 3rem", borderRadius: "1rem", background: "linear-gradient(135deg, #6366f1, #a855f7)", color: "#fff", border: "none", fontWeight: 800, cursor: "pointer" }}>NEXT ROUND</button>
+          </>
+        ) : (
+          <div style={{ animation: "fadeIn 0.8s ease", marginTop: "1rem" }}>
+            <div style={{ fontSize: "4rem", fontWeight: 900, color: isUserWinner ? "#10b981" : "#ef4444", marginBottom: "0.5rem", textShadow: `0 0 30px ${isUserWinner ? 'rgba(16,185,129,0.5)' : 'rgba(239,68,68,0.5)'}` }}>
+              {isUserWinner ? "YOU WIN!" : "AI WINS!"}
+            </div>
+            <div style={{ fontSize: "1.2rem", color: "rgba(255,255,255,0.7)", marginBottom: "2.5rem", fontWeight: 600 }}>
+              Final Score: {onChainGame?.player1_wins} - {onChainGame?.player2_wins}
+            </div>
+            <div style={{ display: "flex", gap: "1.5rem", justifyContent: "center" }}>
+              <button onClick={startVsAi} className="mode-btn" style={{ padding: "1.2rem 3rem", borderRadius: "1rem", background: "linear-gradient(135deg, #10b981, #059669)", color: "#fff", border: "none", fontWeight: 900, cursor: "pointer", fontSize: "1.1rem" }}>PLAY AGAIN</button>
+              <button onClick={() => setMode("menu")} className="mode-btn" style={{ padding: "1.2rem 3rem", borderRadius: "1rem", background: "rgba(255,255,255,0.1)", color: "#fff", border: "1px solid rgba(255,255,255,0.2)", fontWeight: 900, cursor: "pointer", fontSize: "1.1rem" }}>QUIT</button>
             </div>
           </div>
-        ) : (
-          <button onClick={handleNextRound} className="mode-btn" style={{ marginTop: "2rem", padding: "1rem 3rem", borderRadius: "1rem", background: "linear-gradient(135deg, #6366f1, #a855f7)", color: "#fff", border: "none", fontWeight: 800, cursor: "pointer" }}>NEXT ROUND</button>
         )}
       </div>
     );
