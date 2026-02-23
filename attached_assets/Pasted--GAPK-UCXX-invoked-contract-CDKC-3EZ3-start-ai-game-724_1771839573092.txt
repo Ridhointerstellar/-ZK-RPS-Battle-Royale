@@ -1,0 +1,27 @@
+
+GAPK…UCXX invoked contract CDKC…3EZ3 start_ai_game(724913761u32, GAPK…UCXX, GCN7…DXMK, 1000i128, 1000i128)
+ Invoked contract CDKC…3EZ3 start_ai_game(724913761u32, GAPK…UCXX, GCN7…DXMK, 1000i128, 1000i128)
+ Invoked contract CB4V…EMYG start_game(CDKC…3EZ3, 724913761u32, GAPK…UCXX, GCN7…DXMK, 1000i128, 1000i128)
+ Contract CB4V…EMYG raised event ["game_started"sym] with data {"game_id"sym: CDKC…3EZ3, "player1"sym: GAPK…UCXX, "player1_points"sym: 1000i128, "player2"sym: GCN7…DXMK, "player2_points"sym: 1000i128, "session_id"sym: 724913761u32}
+ Contract CDKC…3EZ3 updated instance data <LedgerKeyContractInstance> = 3399b9f5b9d87be7ff288cdced24663114e1069379ac66f4ffbb080335c7b61fwasm
+ Contract CDKC…3EZ3 updated instance data ["TotalGames"sym] = 3u32
+ Contract CDKC…3EZ3 created temporary data ["Game"sym, 724913761u32] = {"current_round"sym: 1u32, "is_vs_ai"sym: truebool, "max_rounds"sym: 3u32, "phase"sym: 0u32, "player1"sym: GAPK…UCXX, "player1_choice"sym: 0u32, "player1_commitment"sym: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=bytes, "player1_committed"sym: falsebool, "player1_points"sym: 1000i128, "player1_revealed"sym: falsebool, "player1_wins"sym: 0u32, "player2"sym: GCN7…DXMK, "player2_choice"sym: 0u32, "player2_commitment"sym: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=bytes, "player2_committed"sym: falsebool, "player2_points"sym: 1000i128, "player2_revealed"sym: falsebool, "player2_wins"sym: 0u32, "round_winner"sym: 0u32, "winner"sym: ()}
+ Contract GCN7…DXMK created temporary data 8236401894608222179nonce = ()
+ Time-to-live extended to ledger 1686467 for CDKC…3EZ3 contract state entry 678386…c7672e
+ Time-to-live extended to ledger 1178065 for GCN7…DXMK contract state entry f5c845…5e49e4
+Entries read: 7
+Entries write: 3
+Ledger read: 92B
+Ledger write: 1,228B
+Key read: 40B
+Key write: 0B
+Data read: 92B
+Data write: 1,228B
+Code read: 0B
+Code write: 0B
+Emitted events: 1 (380B)
+Instructions: 2,260,540
+Memory usage: 2,889,139B
+Invoke time: 387µs
+Fees: 185,579 refundable, 18,170 non-refundable, 183,723 rent
+0.0203849 XLMstellar.org transaction fee charged
