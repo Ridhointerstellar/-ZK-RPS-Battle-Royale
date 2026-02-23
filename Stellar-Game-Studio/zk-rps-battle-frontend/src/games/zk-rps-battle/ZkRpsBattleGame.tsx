@@ -195,9 +195,11 @@ export function ZkRpsBattleGame({
           const prevP1 = onChainGame?.player1_wins ?? 0;
           const prevP2 = onChainGame?.player2_wins ?? 0;
 
+          const p1Gained = p1Wins - prevP1;
+          const p2Gained = p2Wins - prevP2;
           let roundWinner = "draw";
-          if (p1Wins > prevP1) roundWinner = "player1";
-          else if (p2Wins > prevP2) roundWinner = "player2";
+          if (p1Gained > 0 && p2Gained === 0) roundWinner = "player1";
+          else if (p2Gained > 0 && p1Gained === 0) roundWinner = "player2";
 
           setLastRoundResult({
             p1Choice: choice,
