@@ -14,8 +14,8 @@ A **Zero-Knowledge Rock-Paper-Scissors Battle Royale** game built on the **Stell
 
 The game uses a **commit-reveal scheme** (a zero-knowledge technique) to ensure fairness:
 
-1. **Commit Phase** - Each player submits a cryptographic hash of their choice + a random nonce: `keccak256(choice || nonce)`. Neither player knows what the other picked.
-2. **Reveal Phase** - Both players reveal their actual choice and nonce. The smart contract verifies that `hash(choice + nonce)` matches the original commitment.
+1. **Commit Phase** - Each player submits a cryptographic hash of their choice + a random nonce: `keccak256(choice + nonce)`. Neither player knows what the other picked.
+2. **Reveal Phase** - Both players reveal their actual choice and nonce. The smart contract verifies that `keccak256(choice + nonce)` matches the original commitment.
 3. **Resolution** - The contract determines the round winner based on standard RPS rules.
 
 This prevents:
@@ -185,7 +185,7 @@ Stellar-Game-Studio/
 
 ```bash
 git clone https://github.com/Ridhointerstellar/-ZK-RPS-Battle-Royale.git
-cd -ZK-RPS-Battle-Royale
+cd ZK-RPS-Battle-Royale
 
 # Install dependencies
 bun install
