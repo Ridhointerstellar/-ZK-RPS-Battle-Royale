@@ -9,7 +9,7 @@ import {
   Operation,
   authorizeEntry,
 } from "@stellar/stellar-sdk";
-import { Server, Api, assembleTransaction } from "@stellar/stellar-sdk/rpc";
+import { Server, Api } from "@stellar/stellar-sdk/rpc";
 import { keccak256 } from "js-sha3";
 import { Choice, GamePhase, type Game, networks } from "./bindings";
 import type { ContractSigner } from "../../types/signer";
@@ -369,15 +369,10 @@ export class OnChainRpsService {
       .build();
 
     onStatus?.("Simulating...");
-    const sim = await this.server.simulateTransaction(tx);
-    if (Api.isSimulationError(sim)) {
-      throw new Error(`Simulation error: ${(sim as any).error}`);
-    }
-
-    const assembled = assembleTransaction(tx, sim).build();
+    const prepared = await this.server.prepareTransaction(tx);
 
     onStatus?.("Please approve in your wallet...");
-    const txXdr = assembled.toXDR();
+    const txXdr = prepared.toXDR();
     const signResult = await walletSigner.signTransaction(txXdr, {
       networkPassphrase: NETWORK_PASSPHRASE,
     });
@@ -439,15 +434,10 @@ export class OnChainRpsService {
       .build();
 
     onStatus?.("Simulating...");
-    const sim = await this.server.simulateTransaction(tx);
-    if (Api.isSimulationError(sim)) {
-      throw new Error(`Simulation error: ${(sim as any).error}`);
-    }
-
-    const assembled = assembleTransaction(tx, sim).build();
+    const prepared = await this.server.prepareTransaction(tx);
 
     onStatus?.("Please approve in your wallet...");
-    const txXdr = assembled.toXDR();
+    const txXdr = prepared.toXDR();
     const signResult = await walletSigner.signTransaction(txXdr, {
       networkPassphrase: NETWORK_PASSPHRASE,
     });
