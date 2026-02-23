@@ -17,6 +17,7 @@ bindings/
 # Dependencies
 node_modules/
 bun.lockb
+bun.lock
 
 # Frontend build
 dist/
@@ -39,3 +40,11 @@ frontend-template/*.tsbuildinfo
 # OS
 .DS_Store
 Thumbs.db
+
+# Replit
+replit.md
+.replit
+replit.nix
+.cache/
+.config/
+.local/
